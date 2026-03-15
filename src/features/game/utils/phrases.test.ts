@@ -1,10 +1,21 @@
-import { describe, it, expect } from "vitest";
-import {
-  PHRASES,
-  calculatePhraseDifficulty,
-  getRandomPhrase,
-  getPhraseCounts,
-} from "./phrases";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { calculatePhraseDifficulty, classifyDifficulty } from "./phrases";
+
+// Mock firebase/firestore so we don't need a real Firestore instance
+vi.mock("firebase/firestore", () => ({
+  collection: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  orderBy: vi.fn(),
+  limit: vi.fn(),
+  getDocs: vi.fn(),
+  getFirestore: vi.fn(),
+  connectFirestoreEmulator: vi.fn(),
+}));
+
+vi.mock("../../../lib/firebase", () => ({
+  db: {},
+}));
 
 describe("calculatePhraseDifficulty", () => {
   it("scores shorter common phrases lower", () => {
@@ -20,71 +31,89 @@ describe("calculatePhraseDifficulty", () => {
   });
 });
 
-describe("phrase bank", () => {
-  it("has 100 phrases", () => {
-    expect(PHRASES).toHaveLength(100);
+describe("classifyDifficulty", () => {
+  it("classifies low scores as easy", () => {
+    expect(classifyDifficulty(40)).toBe("easy");
+    expect(classifyDifficulty(53)).toBe("easy");
   });
 
-  it("every phrase has a difficulty assigned", () => {
-    for (const phrase of PHRASES) {
-      expect(["easy", "medium", "hard"]).toContain(phrase.difficulty);
-    }
+  it("classifies mid scores as medium", () => {
+    expect(classifyDifficulty(54)).toBe("medium");
+    expect(classifyDifficulty(60)).toBe("medium");
   });
 
-  it("has a reasonable distribution across difficulties", () => {
-    const counts = getPhraseCounts();
-    // Each tier should have at least 20 phrases
-    expect(counts.easy).toBeGreaterThanOrEqual(20);
-    expect(counts.medium).toBeGreaterThanOrEqual(20);
-    expect(counts.hard).toBeGreaterThanOrEqual(20);
+  it("classifies high scores as hard", () => {
+    expect(classifyDifficulty(61)).toBe("hard");
+    expect(classifyDifficulty(80)).toBe("hard");
   });
 });
 
 describe("getRandomPhrase", () => {
-  it("returns a phrase matching the requested difficulty", () => {
-    const easy = getRandomPhrase([], "easy");
-    expect(easy.difficulty).toBe("easy");
-
-    const hard = getRandomPhrase([], "hard");
-    expect(hard.difficulty).toBe("hard");
+  beforeEach(() => {
+    vi.resetModules();
   });
 
-  it("excludes already-used phrases", () => {
-    const allEasyTexts = PHRASES.filter((p) => p.difficulty === "easy").map(
-      (p) => p.text,
+  it("returns a phrase from Firestore query results", async () => {
+    const { getDocs } = await import("firebase/firestore");
+    const mockedGetDocs = vi.mocked(getDocs);
+    mockedGetDocs.mockResolvedValueOnce({
+      docs: [
+        {
+          data: () => ({
+            text: "JURASSIC PARK",
+            category: "Movie Titles",
+            difficulty: "easy",
+            rand: 0.5,
+          }),
+        },
+      ],
+    } as never);
+
+    const { getRandomPhrase } = await import("./phrases");
+    const result = await getRandomPhrase([], "easy");
+    expect(result.text).toBe("JURASSIC PARK");
+    expect(result.category).toBe("Movie Titles");
+    expect(result.difficulty).toBe("easy");
+  });
+
+  it("skips excluded phrases and picks the next one", async () => {
+    const { getDocs } = await import("firebase/firestore");
+    const mockedGetDocs = vi.mocked(getDocs);
+    mockedGetDocs.mockResolvedValueOnce({
+      docs: [
+        {
+          data: () => ({
+            text: "JURASSIC PARK",
+            category: "Movie Titles",
+            difficulty: "easy",
+            rand: 0.5,
+          }),
+        },
+        {
+          data: () => ({
+            text: "THE LION KING",
+            category: "Movie Titles",
+            difficulty: "easy",
+            rand: 0.6,
+          }),
+        },
+      ],
+    } as never);
+
+    const { getRandomPhrase } = await import("./phrases");
+    const result = await getRandomPhrase(["JURASSIC PARK"], "easy");
+    expect(result.text).toBe("THE LION KING");
+  });
+
+  it("throws when no phrases are available", async () => {
+    const { getDocs } = await import("firebase/firestore");
+    const mockedGetDocs = vi.mocked(getDocs);
+    // Return empty for all attempts (3 attempts * 2 directions + fallback * 2)
+    mockedGetDocs.mockResolvedValue({ docs: [] } as never);
+
+    const { getRandomPhrase } = await import("./phrases");
+    await expect(getRandomPhrase([], "easy")).rejects.toThrow(
+      "No more phrases available",
     );
-    // Exclude all but one easy phrase
-    const excludeAll = allEasyTexts.slice(1);
-    const result = getRandomPhrase(excludeAll, "easy");
-    expect(result.text).toBe(allEasyTexts[0]);
-  });
-
-  it("falls back to any difficulty when target is exhausted", () => {
-    const allTexts = PHRASES.filter((p) => p.difficulty === "easy").map(
-      (p) => p.text,
-    );
-    // Exclude ALL easy phrases
-    const result = getRandomPhrase(allTexts, "easy");
-    // Should still return something (medium or hard)
-    expect(result.text).toBeTruthy();
-    expect(result.difficulty).not.toBe("easy");
-  });
-
-  it("ramping mode gives easy phrases for early rounds", () => {
-    // Round 1 of 5 should be easy
-    const phrase = getRandomPhrase([], "ramping", 1, 5);
-    expect(phrase.difficulty).toBe("easy");
-  });
-
-  it("ramping mode gives hard phrases for late rounds", () => {
-    // Round 5 of 5 should be hard
-    const phrase = getRandomPhrase([], "ramping", 5, 5);
-    expect(phrase.difficulty).toBe("hard");
-  });
-
-  it("ramping mode gives medium phrases for middle rounds", () => {
-    // Round 3 of 5 should be medium
-    const phrase = getRandomPhrase([], "ramping", 3, 5);
-    expect(phrase.difficulty).toBe("medium");
   });
 });

@@ -1,14 +1,24 @@
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+} from "firebase/firestore";
+import { db } from "../../../lib/firebase";
 import type { Difficulty, PhraseCategory } from "../../../lib/types";
 
 type PhraseDifficulty = "easy" | "medium" | "hard";
 
-interface PhraseEntry {
+export interface PhraseEntry {
   text: string;
   category: PhraseCategory;
   difficulty: PhraseDifficulty;
 }
 
-// Letter frequency in English (higher = more common)
+// ── Difficulty scoring (also used by the seed script) ──────────────────
+
 const LETTER_FREQ: Record<string, number> = {
   e: 13, t: 9.1, a: 8.2, o: 7.5, i: 7, n: 6.7, s: 6.3, h: 6.1,
   r: 6, d: 4.3, l: 4, c: 2.8, u: 2.8, m: 2.4, w: 2.4, f: 2.2,
@@ -16,180 +26,27 @@ const LETTER_FREQ: Record<string, number> = {
   q: 0.1, z: 0.07,
 };
 
-/**
- * Calculates a difficulty score for a phrase.
- * Higher score = harder phrase.
- *
- * Factors:
- * - Unique letter count (more unique letters = harder to guess)
- * - Total length (longer phrases have more tiles to decode visually)
- * - Letter rarity (uncommon letters are harder to guess)
- */
 export const calculatePhraseDifficulty = (text: string): number => {
   const letters = text.toLowerCase().replace(/[^a-z]/g, "");
   const unique = new Set(letters);
-
-  // Factor 1: Unique letter count (range ~3-16)
   const uniqueCount = unique.size;
-
-  // Factor 2: Total letter count (range ~5-30)
   const totalLetters = letters.length;
-
-  // Factor 3: Average letter rarity (invert frequency so rare = high)
   let raritySum = 0;
   for (const ch of unique) {
-    raritySum += 14 - (LETTER_FREQ[ch] || 0); // 14 is above max freq
+    raritySum += 14 - (LETTER_FREQ[ch] || 0);
   }
   const avgRarity = raritySum / unique.size;
-
-  // Weighted combination
   return uniqueCount * 3 + totalLetters * 0.5 + avgRarity * 2;
 };
 
-/**
- * Classifies a numeric difficulty score into easy/medium/hard.
- * Thresholds tuned against the current phrase bank.
- */
-const classifyDifficulty = (score: number): PhraseDifficulty => {
+export const classifyDifficulty = (score: number): PhraseDifficulty => {
   if (score < 54) return "easy";
   if (score < 61) return "medium";
   return "hard";
 };
 
-const makePhraseEntry = (
-  text: string,
-  category: PhraseCategory,
-): PhraseEntry => ({
-  text,
-  category,
-  difficulty: classifyDifficulty(calculatePhraseDifficulty(text)),
-});
-
-export const PHRASES: PhraseEntry[] = [
-  // Movie Titles
-  makePhraseEntry("THE SHAWSHANK REDEMPTION", "Movie Titles"),
-  makePhraseEntry("BACK TO THE FUTURE", "Movie Titles"),
-  makePhraseEntry("THE WIZARD OF OZ", "Movie Titles"),
-  makePhraseEntry("JURASSIC PARK", "Movie Titles"),
-  makePhraseEntry("THE LION KING", "Movie Titles"),
-  makePhraseEntry("FORREST GUMP", "Movie Titles"),
-  makePhraseEntry("THE DARK KNIGHT", "Movie Titles"),
-  makePhraseEntry("PULP FICTION", "Movie Titles"),
-  makePhraseEntry("FINDING NEMO", "Movie Titles"),
-  makePhraseEntry("THE MATRIX", "Movie Titles"),
-
-  // Famous Quotes
-  makePhraseEntry("TO BE OR NOT TO BE", "Famous Quotes"),
-  makePhraseEntry("I THINK THEREFORE I AM", "Famous Quotes"),
-  makePhraseEntry("HOUSTON WE HAVE A PROBLEM", "Famous Quotes"),
-  makePhraseEntry("MAY THE FORCE BE WITH YOU", "Famous Quotes"),
-  makePhraseEntry("THAT IS ONE SMALL STEP FOR MAN", "Famous Quotes"),
-  makePhraseEntry("HERE LOOKING AT YOU KID", "Famous Quotes"),
-  makePhraseEntry("LIFE IS LIKE A BOX OF CHOCOLATES", "Famous Quotes"),
-  makePhraseEntry("YOU CANT HANDLE THE TRUTH", "Famous Quotes"),
-  makePhraseEntry("ELEMENTARY MY DEAR WATSON", "Famous Quotes"),
-  makePhraseEntry("I WILL BE BACK", "Famous Quotes"),
-
-  // Song Lyrics
-  makePhraseEntry("DONT STOP BELIEVING", "Song Lyrics"),
-  makePhraseEntry("BOHEMIAN RHAPSODY", "Song Lyrics"),
-  makePhraseEntry("IMAGINE ALL THE PEOPLE", "Song Lyrics"),
-  makePhraseEntry("WE WILL ROCK YOU", "Song Lyrics"),
-  makePhraseEntry("SWEET HOME ALABAMA", "Song Lyrics"),
-  makePhraseEntry("STAIRWAY TO HEAVEN", "Song Lyrics"),
-  makePhraseEntry("EVERY BREATH YOU TAKE", "Song Lyrics"),
-  makePhraseEntry("DANCING IN THE MOONLIGHT", "Song Lyrics"),
-  makePhraseEntry("THUNDER AND LIGHTNING", "Song Lyrics"),
-  makePhraseEntry("WALKING ON SUNSHINE", "Song Lyrics"),
-
-  // Food & Drink
-  makePhraseEntry("PEANUT BUTTER AND JELLY", "Food & Drink"),
-  makePhraseEntry("CHICKEN NOODLE SOUP", "Food & Drink"),
-  makePhraseEntry("STRAWBERRY SHORTCAKE", "Food & Drink"),
-  makePhraseEntry("MACARONI AND CHEESE", "Food & Drink"),
-  makePhraseEntry("CHOCOLATE CHIP COOKIES", "Food & Drink"),
-  makePhraseEntry("BANANA SPLIT SUNDAE", "Food & Drink"),
-  makePhraseEntry("FRESH SQUEEZED LEMONADE", "Food & Drink"),
-  makePhraseEntry("GRILLED CHEESE SANDWICH", "Food & Drink"),
-  makePhraseEntry("PEPPERONI PIZZA", "Food & Drink"),
-  makePhraseEntry("BLUEBERRY PANCAKES", "Food & Drink"),
-
-  // Places
-  makePhraseEntry("GRAND CANYON", "Places"),
-  makePhraseEntry("STATUE OF LIBERTY", "Places"),
-  makePhraseEntry("GREAT WALL OF CHINA", "Places"),
-  makePhraseEntry("EIFFEL TOWER", "Places"),
-  makePhraseEntry("MOUNT EVEREST", "Places"),
-  makePhraseEntry("GOLDEN GATE BRIDGE", "Places"),
-  makePhraseEntry("NIAGARA FALLS", "Places"),
-  makePhraseEntry("CENTRAL PARK", "Places"),
-  makePhraseEntry("TIMES SQUARE", "Places"),
-  makePhraseEntry("SILICON VALLEY", "Places"),
-
-  // Idioms
-  makePhraseEntry("BREAK A LEG", "Idioms"),
-  makePhraseEntry("PIECE OF CAKE", "Idioms"),
-  makePhraseEntry("BITE THE BULLET", "Idioms"),
-  makePhraseEntry("UNDER THE WEATHER", "Idioms"),
-  makePhraseEntry("HIT THE NAIL ON THE HEAD", "Idioms"),
-  makePhraseEntry("COST AN ARM AND A LEG", "Idioms"),
-  makePhraseEntry("BLESSING IN DISGUISE", "Idioms"),
-  makePhraseEntry("ONCE IN A BLUE MOON", "Idioms"),
-  makePhraseEntry("BURNING THE MIDNIGHT OIL", "Idioms"),
-  makePhraseEntry("THE BEST OF BOTH WORLDS", "Idioms"),
-
-  // Pop Culture
-  makePhraseEntry("GAME OF THRONES", "Pop Culture"),
-  makePhraseEntry("STRANGER THINGS", "Pop Culture"),
-  makePhraseEntry("TAYLOR SWIFT ERA", "Pop Culture"),
-  makePhraseEntry("SUPER MARIO BROTHERS", "Pop Culture"),
-  makePhraseEntry("HARRY POTTER", "Pop Culture"),
-  makePhraseEntry("STAR WARS SAGA", "Pop Culture"),
-  makePhraseEntry("POKEMON MASTER", "Pop Culture"),
-  makePhraseEntry("MINECRAFT WORLD", "Pop Culture"),
-  makePhraseEntry("SOCIAL MEDIA INFLUENCER", "Pop Culture"),
-  makePhraseEntry("VIRAL INTERNET CHALLENGE", "Pop Culture"),
-
-  // Sports
-  makePhraseEntry("WORLD SERIES CHAMPION", "Sports"),
-  makePhraseEntry("TOUCHDOWN CELEBRATION", "Sports"),
-  makePhraseEntry("SLAM DUNK CONTEST", "Sports"),
-  makePhraseEntry("OLYMPIC GOLD MEDAL", "Sports"),
-  makePhraseEntry("GRAND SLAM WINNER", "Sports"),
-  makePhraseEntry("HOLE IN ONE", "Sports"),
-  makePhraseEntry("SUPER BOWL HALFTIME", "Sports"),
-  makePhraseEntry("PENALTY SHOOTOUT", "Sports"),
-  makePhraseEntry("TRIPLE CROWN WINNER", "Sports"),
-  makePhraseEntry("MARATHON FINISH LINE", "Sports"),
-
-  // Science & Nature
-  makePhraseEntry("NORTHERN LIGHTS AURORA", "Science & Nature"),
-  makePhraseEntry("MILKY WAY GALAXY", "Science & Nature"),
-  makePhraseEntry("THEORY OF RELATIVITY", "Science & Nature"),
-  makePhraseEntry("PHOTOSYNTHESIS PROCESS", "Science & Nature"),
-  makePhraseEntry("PERIODIC TABLE OF ELEMENTS", "Science & Nature"),
-  makePhraseEntry("RAINFOREST ECOSYSTEM", "Science & Nature"),
-  makePhraseEntry("SOLAR ECLIPSE", "Science & Nature"),
-  makePhraseEntry("CORAL REEF HABITAT", "Science & Nature"),
-  makePhraseEntry("GRAVITATIONAL PULL", "Science & Nature"),
-  makePhraseEntry("VOLCANIC ERUPTION", "Science & Nature"),
-
-  // History
-  makePhraseEntry("DECLARATION OF INDEPENDENCE", "History"),
-  makePhraseEntry("ANCIENT EGYPTIAN PYRAMID", "History"),
-  makePhraseEntry("INDUSTRIAL REVOLUTION", "History"),
-  makePhraseEntry("RENAISSANCE MASTERPIECE", "History"),
-  makePhraseEntry("ROMAN COLOSSEUM", "History"),
-  makePhraseEntry("SILK ROAD TRADE ROUTE", "History"),
-  makePhraseEntry("BOSTON TEA PARTY", "History"),
-  makePhraseEntry("WRIGHT BROTHERS FLIGHT", "History"),
-  makePhraseEntry("MOON LANDING MISSION", "History"),
-  makePhraseEntry("CIVIL RIGHTS MOVEMENT", "History"),
-];
-
 /**
  * For "ramping" mode: maps round progress to a difficulty tier.
- * Early rounds are easy, middle rounds are medium, late rounds are hard.
  */
 const getRampingDifficulty = (
   roundNumber: number,
@@ -202,49 +59,82 @@ const getRampingDifficulty = (
 };
 
 /**
- * Gets a random phrase matching the difficulty setting.
+ * Fetches a random phrase from Firestore matching the difficulty setting.
+ *
+ * Uses a `rand` field stored on each phrase document. We generate a random
+ * value and query for the nearest document above it (with a wraparound
+ * fallback). This gives O(1) random selection without fetching all docs.
+ *
+ * Phrases whose text appears in `excludeTexts` are filtered client-side
+ * after fetch. For typical game sizes (5-10 rounds) this is fine — we
+ * fetch a small batch and retry if we hit an excluded phrase.
  */
-export const getRandomPhrase = (
+export const getRandomPhrase = async (
   excludeTexts: string[] = [],
   difficulty: Difficulty = "medium",
   roundNumber: number = 1,
   totalRounds: number = 5,
-): PhraseEntry => {
+): Promise<PhraseEntry> => {
   const targetDifficulty: PhraseDifficulty =
     difficulty === "ramping"
       ? getRampingDifficulty(roundNumber, totalRounds)
       : difficulty;
 
-  // First try to match exact difficulty
-  let available = PHRASES.filter(
-    (p) =>
-      !excludeTexts.includes(p.text) && p.difficulty === targetDifficulty,
-  );
+  const phrasesRef = collection(db, "phrases");
+  const excludeSet = new Set(excludeTexts);
 
-  // Fallback: if not enough phrases, widen to all unused
-  if (available.length === 0) {
-    available = PHRASES.filter((p) => !excludeTexts.includes(p.text));
+  // Try up to 3 random picks before falling back to a full scan
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const rand = Math.random();
+
+    // Try >= rand first, then wrap around with < rand
+    for (const op of [">=" as const, "<" as const]) {
+      const dir = op === ">=" ? "asc" : "desc";
+      const q = query(
+        phrasesRef,
+        where("difficulty", "==", targetDifficulty),
+        where("rand", op, rand),
+        orderBy("rand", dir),
+        limit(5), // fetch a small batch to increase chance of non-excluded hit
+      );
+
+      const snapshot = await getDocs(q);
+      for (const doc of snapshot.docs) {
+        const data = doc.data();
+        if (!excludeSet.has(data.text as string)) {
+          return {
+            text: data.text as string,
+            category: data.category as PhraseCategory,
+            difficulty: data.difficulty as PhraseDifficulty,
+          };
+        }
+      }
+    }
   }
 
-  if (available.length === 0) {
-    throw new Error("No more phrases available");
+  // Fallback: try ANY difficulty (still excluding used phrases)
+  const rand = Math.random();
+  for (const op of [">=" as const, "<" as const]) {
+    const dir = op === ">=" ? "asc" : "desc";
+    const q = query(
+      phrasesRef,
+      where("rand", op, rand),
+      orderBy("rand", dir),
+      limit(10),
+    );
+
+    const snapshot = await getDocs(q);
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      if (!excludeSet.has(data.text as string)) {
+        return {
+          text: data.text as string,
+          category: data.category as PhraseCategory,
+          difficulty: data.difficulty as PhraseDifficulty,
+        };
+      }
+    }
   }
 
-  const index = Math.floor(Math.random() * available.length);
-  return available[index];
-};
-
-/**
- * Returns counts of phrases per difficulty level (for debugging/balancing).
- */
-export const getPhraseCounts = (): Record<PhraseDifficulty, number> => {
-  const counts: Record<PhraseDifficulty, number> = {
-    easy: 0,
-    medium: 0,
-    hard: 0,
-  };
-  for (const phrase of PHRASES) {
-    counts[phrase.difficulty]++;
-  }
-  return counts;
+  throw new Error("No more phrases available");
 };

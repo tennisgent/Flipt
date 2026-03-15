@@ -25,7 +25,7 @@ export const useGame = () => {
     async (
       hostUid: string,
       displayName: string,
-      totalRounds: number = 5,
+      totalRounds: number = 3,
       difficulty: Difficulty = "medium",
     ): Promise<string> => {
       setLoading(true);
@@ -128,7 +128,7 @@ export const useGame = () => {
     try {
       const gameRef = doc(db, "games", gameId);
       // Create the first round
-      const phrase = getRandomPhrase([], difficulty, 1, totalRounds);
+      const phrase = await getRandomPhrase([], difficulty, 1, totalRounds);
       const roundRef = doc(collection(db, "rounds"));
       await setDoc(roundRef, {
         gameId,
@@ -208,7 +208,7 @@ export const useGame = () => {
         }
 
         // Create next round
-        const phrase = getRandomPhrase(
+        const phrase = await getRandomPhrase(
           usedPhrases,
           game.difficulty,
           nextRound,

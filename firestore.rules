@@ -23,6 +23,11 @@ service cloud.firestore {
       allow update: if request.auth != null;
     }
 
+    // Phrases: read-only for authenticated users (seeded via admin SDK)
+    match /phrases/{phraseId} {
+      allow read: if request.auth != null;
+    }
+
     // Round results: players can create their own; anyone in the game can read
     match /round-results/{resultId} {
       allow read: if request.auth != null;

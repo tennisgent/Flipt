@@ -18,6 +18,22 @@
       ]
     },
     {
+      "collectionGroup": "phrases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "difficulty", "order": "ASCENDING" },
+        { "fieldPath": "rand", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "phrases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "difficulty", "order": "ASCENDING" },
+        { "fieldPath": "rand", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "round-results",
       "queryScope": "COLLECTION",
       "fields": [
