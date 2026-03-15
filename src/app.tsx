@@ -69,17 +69,11 @@ const AppContent = () => {
         }
       }
 
-      // When on round-results, another player may have advanced the round
+      // If the game finishes while on round-results, go to game-over
       if (screen.type === "round-results") {
         if (updatedGame.status === "finished") {
           clearGameSession();
           setScreen({ type: "game-over", gameId });
-        } else if (updatedGame.currentRound > screen.roundNumber) {
-          setScreen({
-            type: "playing",
-            gameId,
-            roundNumber: updatedGame.currentRound,
-          });
         }
       }
     });
