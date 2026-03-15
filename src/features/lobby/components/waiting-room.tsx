@@ -36,6 +36,7 @@ export const WaitingRoom = ({
   const [game, setGame] = useState<Game | null>(null);
   const [copied, setCopied] = useState(false);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
+  const [totalRounds, setTotalRounds] = useState(3);
 
   useEffect(() => {
     const unsubscribe = subscribeToGame(gameId, (updatedGame) => {
@@ -49,14 +50,15 @@ export const WaitingRoom = ({
 
   const handleCopyCode = async () => {
     if (!game) return;
-    await navigator.clipboard.writeText(formatGameCode(game.code));
+    const url = `${window.location.origin}/invite?code=${formatGameCode(game.code)}`;
+    await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleStart = () => {
     if (!game) return;
-    startGame(gameId, difficulty, game.totalRounds);
+    startGame(gameId, difficulty, totalRounds);
   };
 
   if (!game) {
@@ -110,29 +112,54 @@ export const WaitingRoom = ({
         </div>
 
         {isHost && (
-          <div className="waiting-room__difficulty">
-            <h3 className="waiting-room__difficulty-title">Difficulty</h3>
-            <div className="waiting-room__difficulty-options">
-              {DIFFICULTY_OPTIONS.map((opt) => (
+          <>
+            <div className="waiting-room__rounds">
+              <h3 className="waiting-room__rounds-title">Rounds</h3>
+              <div className="waiting-room__rounds-selector">
                 <button
-                  key={opt.value}
-                  className={`waiting-room__difficulty-option ${
-                    difficulty === opt.value
-                      ? "waiting-room__difficulty-option--active"
-                      : ""
-                  }`}
-                  onClick={() => setDifficulty(opt.value)}
+                  className="waiting-room__rounds-btn"
+                  onClick={() => setTotalRounds((r) => Math.max(2, r - 1))}
+                  disabled={totalRounds <= 2}
                 >
-                  <span className="waiting-room__difficulty-label">
-                    {opt.label}
-                  </span>
-                  <span className="waiting-room__difficulty-desc">
-                    {opt.description}
-                  </span>
+                  -
                 </button>
-              ))}
+                <span className="waiting-room__rounds-value">
+                  {totalRounds}
+                </span>
+                <button
+                  className="waiting-room__rounds-btn"
+                  onClick={() => setTotalRounds((r) => Math.min(10, r + 1))}
+                  disabled={totalRounds >= 10}
+                >
+                  +
+                </button>
+              </div>
             </div>
-          </div>
+
+            <div className="waiting-room__difficulty">
+              <h3 className="waiting-room__difficulty-title">Difficulty</h3>
+              <div className="waiting-room__difficulty-options">
+                {DIFFICULTY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    className={`waiting-room__difficulty-option ${
+                      difficulty === opt.value
+                        ? "waiting-room__difficulty-option--active"
+                        : ""
+                    }`}
+                    onClick={() => setDifficulty(opt.value)}
+                  >
+                    <span className="waiting-room__difficulty-label">
+                      {opt.label}
+                    </span>
+                    <span className="waiting-room__difficulty-desc">
+                      {opt.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         <div className="waiting-room__actions">
