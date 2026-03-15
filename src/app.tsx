@@ -154,6 +154,7 @@ const AppContent = () => {
           gameId={screen.gameId}
           roundNumber={screen.roundNumber}
           onRoundComplete={handleRoundComplete}
+          onLeave={handleLeave}
         />
       );
     case "round-results":

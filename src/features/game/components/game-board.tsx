@@ -10,12 +10,14 @@ interface GameBoardProps {
   gameId: string;
   roundNumber: number;
   onRoundComplete: (score: number, roundId: string, phrase: string) => void;
+  onLeave: () => void;
 }
 
 export const GameBoard = ({
   gameId,
   roundNumber,
   onRoundComplete,
+  onLeave,
 }: GameBoardProps) => {
   const { user } = useAuthContext();
   const {
@@ -85,6 +87,12 @@ export const GameBoard = ({
       onRoundComplete(finalScore, round.id, round.phrase);
     }
   }, [giveUp, onRoundComplete, round]);
+
+  const handleLeave = useCallback(() => {
+    if (window.confirm("Leave this game? Your progress will be lost.")) {
+      onLeave();
+    }
+  }, [onLeave]);
 
   if (loading || !round) {
     return (
@@ -170,6 +178,10 @@ export const GameBoard = ({
           </div>
         )}
       </div>
+
+      <button className="game-board__leave" onClick={handleLeave}>
+        Leave Game
+      </button>
     </div>
   );
 };

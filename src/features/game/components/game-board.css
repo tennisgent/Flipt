@@ -167,6 +167,23 @@
   color: var(--color-accent);
 }
 
+.game-board__leave {
+  margin-top: auto;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  color: var(--color-text-dim);
+  font-size: var(--font-size-xs);
+  font-family: inherit;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity var(--transition-fast);
+}
+
+.game-board__leave:hover {
+  opacity: 1;
+}
+
 @keyframes pulse {
   0%,
   100% {

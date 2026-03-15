@@ -67,12 +67,13 @@ const defaultHookReturn = {
   giveUp: vi.fn(),
 };
 
-const renderBoard = (onRoundComplete = vi.fn()) =>
+const renderBoard = (onRoundComplete = vi.fn(), onLeave = vi.fn()) =>
   render(
     <GameBoard
       gameId="game-456"
       roundNumber={1}
       onRoundComplete={onRoundComplete}
+      onLeave={onLeave}
     />,
   );
 
@@ -204,6 +205,7 @@ describe("GameBoard", () => {
         gameId="game-456"
         roundNumber={1}
         onRoundComplete={onRoundComplete}
+        onLeave={vi.fn()}
       />,
     );
 
@@ -222,6 +224,7 @@ describe("GameBoard", () => {
         gameId="game-456"
         roundNumber={1}
         onRoundComplete={onRoundComplete}
+        onLeave={vi.fn()}
       />,
     );
 
@@ -231,6 +234,7 @@ describe("GameBoard", () => {
         gameId="game-456"
         roundNumber={1}
         onRoundComplete={onRoundComplete}
+        onLeave={vi.fn()}
       />,
     );
 
@@ -320,5 +324,28 @@ describe("GameBoard", () => {
     expect(
       screen.queryByText("Show Hint (-5 pts)"),
     ).not.toBeInTheDocument();
+  });
+
+  it("calls onLeave after confirmation when Leave Game is clicked", () => {
+    const onLeave = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    renderBoard(vi.fn(), onLeave);
+
+    fireEvent.click(screen.getByText("Leave Game"));
+    expect(window.confirm).toHaveBeenCalledWith(
+      "Leave this game? Your progress will be lost.",
+    );
+    expect(onLeave).toHaveBeenCalledOnce();
+  });
+
+  it("does not call onLeave when confirmation is cancelled", () => {
+    const onLeave = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    renderBoard(vi.fn(), onLeave);
+
+    fireEvent.click(screen.getByText("Leave Game"));
+    expect(onLeave).not.toHaveBeenCalled();
   });
 });
