@@ -1,10 +1,18 @@
 type SoundName = "flip" | "buzz" | "correct" | "solve" | "tick";
 
-const audioContext = (): AudioContext | null => {
+let ctx: AudioContext | null = null;
+
+const getAudioContext = (): AudioContext | null => {
   if (typeof window === "undefined") return null;
-  const ctx = new (window.AudioContext ||
-    (window as unknown as Record<string, typeof AudioContext>)
-      .webkitAudioContext)();
+  if (!ctx) {
+    ctx = new (window.AudioContext ||
+      (window as unknown as Record<string, typeof AudioContext>)
+        .webkitAudioContext)();
+  }
+  // Resume if suspended (browsers require a user gesture)
+  if (ctx.state === "suspended") {
+    ctx.resume();
+  }
   return ctx;
 };
 
@@ -14,22 +22,25 @@ const playTone = (
   type: OscillatorType = "sine",
   volume = 0.3,
 ) => {
-  const ctx = audioContext();
-  if (!ctx) return;
+  const audioCtx = getAudioContext();
+  if (!audioCtx) return;
 
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
 
   osc.type = type;
-  osc.frequency.setValueAtTime(frequency, ctx.currentTime);
-  gain.gain.setValueAtTime(volume, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+  osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(
+    0.01,
+    audioCtx.currentTime + duration,
+  );
 
   osc.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(audioCtx.destination);
 
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + duration);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + duration);
 };
 
 const sounds: Record<SoundName, () => void> = {
