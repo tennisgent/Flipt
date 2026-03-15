@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import {
   collection,
   doc,
+  getDoc,
   setDoc,
   getDocs,
   query,
@@ -172,6 +173,15 @@ export const useGame = () => {
       setError(null);
       try {
         const gameRef = doc(db, "games", gameId);
+
+        // Re-read the game to check if another player already advanced
+        const freshSnap = await getDoc(gameRef);
+        const freshGame = freshSnap.data() as Omit<Game, "id"> | undefined;
+        if (!freshGame || freshGame.currentRound !== game.currentRound) {
+          // Already advanced by another player — nothing to do
+          return;
+        }
+
         const nextRound = game.currentRound + 1;
 
         if (nextRound > game.totalRounds) {
@@ -259,6 +269,13 @@ export const useGame = () => {
       setError(null);
       try {
         const gameRef = doc(db, "games", gameId);
+
+        // Check if already finished by another player
+        const freshSnap = await getDoc(gameRef);
+        const freshGame = freshSnap.data() as Omit<Game, "id"> | undefined;
+        if (!freshGame || freshGame.status === "finished") {
+          return;
+        }
 
         // Update final scores from last round
         const roundsRef = collection(db, "rounds");

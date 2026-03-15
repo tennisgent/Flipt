@@ -22,7 +22,7 @@ type Screen =
   | { type: "home" }
   | { type: "waiting"; gameId: string }
   | { type: "playing"; gameId: string; roundNumber: number }
-  | { type: "round-results"; gameId: string; roundId: string }
+  | { type: "round-results"; gameId: string; roundId: string; roundNumber: number }
   | { type: "game-over"; gameId: string };
 
 const AppContent = () => {
@@ -56,7 +56,7 @@ const AppContent = () => {
       }
       setGame(updatedGame);
 
-      // Auto-navigate to the right screen on reconnect
+      // Auto-navigate based on game state changes
       if (screen.type === "waiting") {
         if (updatedGame.status === "active") {
           setScreen({
@@ -66,6 +66,20 @@ const AppContent = () => {
           });
         } else if (updatedGame.status === "finished") {
           setScreen({ type: "game-over", gameId });
+        }
+      }
+
+      // When on round-results, another player may have advanced the round
+      if (screen.type === "round-results") {
+        if (updatedGame.status === "finished") {
+          clearGameSession();
+          setScreen({ type: "game-over", gameId });
+        } else if (updatedGame.currentRound > screen.roundNumber) {
+          setScreen({
+            type: "playing",
+            gameId,
+            roundNumber: updatedGame.currentRound,
+          });
         }
       }
     });
@@ -92,6 +106,7 @@ const AppContent = () => {
           type: "round-results",
           gameId: screen.gameId,
           roundId,
+          roundNumber: screen.roundNumber,
         });
       }
     },
