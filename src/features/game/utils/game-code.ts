@@ -10,13 +10,9 @@ export const generateGameCode = (): string => {
 };
 
 export const formatGameCode = (code: string): string => {
-  return `FLIPT-${code.toUpperCase()}`;
+  return code.toUpperCase();
 };
 
 export const parseGameCode = (input: string): string => {
-  const cleaned = input.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (cleaned.startsWith("FLIPT")) {
-    return cleaned.slice(5);
-  }
-  return cleaned;
+  return input.toUpperCase().replace(/[^A-Z0-9]/g, "");
 };
