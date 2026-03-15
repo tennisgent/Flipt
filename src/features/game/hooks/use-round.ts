@@ -54,7 +54,24 @@ export const useRound = (gameId: string, playerUid: string) => {
         // There should only be one active round at a time
         const roundDoc = snapshot.docs[0];
         const round = { id: roundDoc.id, ...roundDoc.data() } as Round;
-        setState((prev) => ({ ...prev, round }));
+        setState((prev) => {
+          // If the round changed, reset all local game state to prevent
+          // stale guesses from a previous round bleeding through
+          if (prev.round?.id !== round.id) {
+            return {
+              round,
+              guessedLetters: [],
+              wrongLetters: [],
+              solveAttempts: [],
+              solved: false,
+              usedHint: false,
+              showHint: false,
+              score: 0,
+              completed: false,
+            };
+          }
+          return { ...prev, round };
+        });
       }
       setLoading(false);
     });

@@ -150,6 +150,7 @@ const AppContent = () => {
     case "playing":
       return (
         <GameBoard
+          key={`${screen.gameId}-${screen.roundNumber}`}
           gameId={screen.gameId}
           roundNumber={screen.roundNumber}
           onRoundComplete={handleRoundComplete}
