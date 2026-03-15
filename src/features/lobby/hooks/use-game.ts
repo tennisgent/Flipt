@@ -168,21 +168,24 @@ export const useGame = () => {
   );
 
   const advanceRound = useCallback(
-    async (gameId: string, game: Game, usedPhrases: string[]): Promise<void> => {
+    async (gameId: string, game: Game, usedPhrases: string[], fromRound: number): Promise<void> => {
       setLoading(true);
       setError(null);
       try {
         const gameRef = doc(db, "games", gameId);
 
-        // Re-read the game to check if another player already advanced
+        // Re-read the game to check if another player already advanced past
+        // the round this player just finished. Use fromRound (the player's
+        // actual completed round) rather than game.currentRound, which may
+        // have been updated by the snapshot listener.
         const freshSnap = await getDoc(gameRef);
         const freshGame = freshSnap.data() as Omit<Game, "id"> | undefined;
-        if (!freshGame || freshGame.currentRound !== game.currentRound) {
+        if (!freshGame || freshGame.currentRound > fromRound) {
           // Already advanced by another player — nothing to do
           return;
         }
 
-        const nextRound = game.currentRound + 1;
+        const nextRound = fromRound + 1;
 
         if (nextRound > game.totalRounds) {
           // Game is finished
@@ -198,7 +201,7 @@ export const useGame = () => {
         const currentRoundQuery = query(
           roundsRef,
           where("gameId", "==", gameId),
-          where("roundNumber", "==", game.currentRound),
+          where("roundNumber", "==", fromRound),
         );
         const currentRoundSnap = await getDocs(currentRoundQuery);
         if (!currentRoundSnap.empty) {

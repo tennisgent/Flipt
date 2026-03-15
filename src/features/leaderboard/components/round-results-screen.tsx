@@ -5,6 +5,7 @@ import "./round-results-screen.css";
 interface RoundResultsScreenProps {
   game: Game;
   roundId: string;
+  roundNumber: number;
   playerUid: string;
   onContinue: () => void;
   isLastRound: boolean;
@@ -13,6 +14,7 @@ interface RoundResultsScreenProps {
 export const RoundResultsScreen = ({
   game,
   roundId,
+  roundNumber,
   playerUid,
   onContinue,
   isLastRound,
@@ -35,7 +37,7 @@ export const RoundResultsScreen = ({
     <div className="round-results">
       <div className="round-results__card">
         <h2 className="round-results__title">
-          Round {game.currentRound} Results
+          Round {roundNumber} Results
         </h2>
 
         {myResult && (

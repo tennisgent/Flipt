@@ -110,18 +110,23 @@ const AppContent = () => {
   const handleContinue = useCallback(async () => {
     if (screen.type !== "round-results" || !game) return;
 
-    const isLastRound = game.currentRound >= game.totalRounds;
+    // Use the round number from the screen state (the round the player actually
+    // just finished), NOT game.currentRound which may have been advanced by
+    // another player via the Firestore snapshot listener.
+    const playerRound = screen.roundNumber;
+    const nextRound = playerRound + 1;
+    const isLastRound = playerRound >= game.totalRounds;
 
     if (isLastRound) {
       await finishGame(screen.gameId, game);
       clearGameSession();
       setScreen({ type: "game-over", gameId: screen.gameId });
     } else {
-      await advanceRound(screen.gameId, game, usedPhrases);
+      await advanceRound(screen.gameId, game, usedPhrases, playerRound);
       setScreen({
         type: "playing",
         gameId: screen.gameId,
-        roundNumber: game.currentRound + 1,
+        roundNumber: nextRound,
       });
     }
   }, [screen, game, advanceRound, finishGame, usedPhrases]);
@@ -171,9 +176,10 @@ const AppContent = () => {
         <RoundResultsScreen
           game={game}
           roundId={screen.roundId}
+          roundNumber={screen.roundNumber}
           playerUid={user.uid}
           onContinue={handleContinue}
-          isLastRound={game.currentRound >= game.totalRounds}
+          isLastRound={screen.roundNumber >= game.totalRounds}
         />
       ) : null;
     case "game-over":
