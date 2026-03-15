@@ -28,6 +28,7 @@ export const GameBoard = ({
     solved,
     usedHint,
     showHint,
+    score,
     completed,
     loading,
     guessLetter,
@@ -79,6 +80,15 @@ export const GameBoard = ({
       return () => clearTimeout(timer);
     }
   }, [solved, completed, round]);
+
+  // If round was already completed (e.g. page refresh after submitting),
+  // skip straight to round results using the score from the existing result.
+  useEffect(() => {
+    if (completed && round && submittedRef.current === false) {
+      submittedRef.current = true;
+      onRoundCompleteRef.current(score, round.id, round.phrase);
+    }
+  }, [completed, round, score]);
 
   const handleGiveUp = useCallback(async () => {
     if (!round) return;
