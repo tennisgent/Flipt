@@ -1,0 +1,12 @@
+.phrase-display {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+}
+
+.phrase-display__word {
+  display: flex;
+  gap: var(--card-gap);
+}

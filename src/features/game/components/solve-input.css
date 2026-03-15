@@ -1,0 +1,103 @@
+.solve-input__toggle {
+  background: linear-gradient(
+    135deg,
+    var(--color-secondary),
+    var(--color-secondary-dark)
+  );
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-xl);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.solve-input__toggle:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px rgba(0, 206, 201, 0.3);
+}
+
+.solve-input__toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.solve-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.solve-input__field {
+  width: 100%;
+  background: var(--color-bg-elevated);
+  border: 2px solid var(--color-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  outline: none;
+  font-family: inherit;
+}
+
+.solve-input__field:focus {
+  box-shadow: 0 0 0 3px rgba(0, 206, 201, 0.2);
+}
+
+.solve-input__actions {
+  display: flex;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.solve-input__submit {
+  flex: 1;
+  background: var(--color-secondary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.solve-input__submit:hover:not(:disabled) {
+  background: var(--color-secondary-dark);
+}
+
+.solve-input__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.solve-input__cancel {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+}
+
+.solve-input__cancel:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+.solve-input__warning {
+  color: var(--color-text-dim);
+  font-size: var(--font-size-xs);
+}

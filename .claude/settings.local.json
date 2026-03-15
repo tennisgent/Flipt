@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(mv flipt-app/.gitignore flipt-app/eslint.config.js flipt-app/index.html flipt-app/package.json flipt-app/public flipt-app/src flipt-app/tsconfig.app.json flipt-app/tsconfig.json flipt-app/tsconfig.node.json flipt-app/vite.config.ts .)",
+      "Bash(rm -rf flipt-app)",
+      "Bash(npm install:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite:*)",
+      "Bash(ls -la /Users/zack/Documents/Flipt/src/*.tsx)",
+      "Bash(npm run:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(firebase --version)",
+      "Bash(find /Users/zack/Documents/Flipt/src -name *.test.ts -o -name *.test.tsx)",
+      "Bash(gh auth:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

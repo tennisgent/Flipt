@@ -1,0 +1,130 @@
+.game-over {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--space-lg);
+}
+
+.game-over__card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2xl);
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.game-over__title {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  background: linear-gradient(
+    135deg,
+    var(--color-accent),
+    var(--color-secondary)
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--space-lg);
+}
+
+.game-over__winner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xl);
+  padding: var(--space-lg);
+  background: linear-gradient(
+    135deg,
+    rgba(253, 203, 110, 0.1),
+    rgba(0, 206, 201, 0.1)
+  );
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+}
+
+.game-over__winner-crown {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--color-accent);
+}
+
+.game-over__winner-score {
+  font-size: var(--font-size-3xl);
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.game-over__standings {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xl);
+  text-align: left;
+}
+
+.game-over__player {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-md);
+}
+
+.game-over__player--me {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-primary);
+}
+
+.game-over__player-position {
+  font-size: var(--font-size-lg);
+  width: 2rem;
+  text-align: center;
+}
+
+.game-over__player-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.game-over__player-rounds {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-dim);
+}
+
+.game-over__player-score {
+  font-weight: 700;
+  color: var(--color-accent);
+  min-width: 3.5rem;
+  text-align: right;
+}
+
+.game-over__play-again {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-primary-dark)
+  );
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-xl);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  width: 100%;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.game-over__play-again:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow);
+}

@@ -1,0 +1,182 @@
+.round-results {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--space-lg);
+}
+
+.round-results__loading {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-lg);
+}
+
+.round-results__card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2xl);
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.round-results__title {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-xl);
+}
+
+.round-results__my-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xl);
+  padding: var(--space-lg);
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-lg);
+}
+
+.round-results__my-score-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.round-results__my-score-value {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-3xl);
+  font-weight: 800;
+  color: var(--color-accent);
+}
+
+.round-results__my-details {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.round-results__badge {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.round-results__badge--solved {
+  background: var(--color-success);
+  color: white;
+}
+
+.round-results__badge--no-hint {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.round-results__list {
+  text-align: left;
+  margin-bottom: var(--space-xl);
+}
+
+.round-results__list-title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-sm);
+}
+
+.round-results__rankings {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.round-results__rank {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.round-results__rank--me {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-primary);
+}
+
+.round-results__rank-position {
+  font-weight: 800;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-dim);
+  width: 2rem;
+  text-align: center;
+}
+
+.round-results__rank--me:first-child .round-results__rank-position {
+  color: var(--color-accent);
+}
+
+.round-results__rank-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.round-results__rank-details {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-dim);
+}
+
+.round-results__rank-score {
+  font-weight: 700;
+  font-size: var(--font-size-md);
+  color: var(--color-accent);
+  min-width: 3rem;
+  text-align: right;
+}
+
+.round-results__continue {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-primary-dark)
+  );
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-xl);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  width: 100%;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.round-results__continue:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow);
+}
+
+.round-results__waiting-hint {
+  color: var(--color-text-dim);
+  font-size: var(--font-size-sm);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

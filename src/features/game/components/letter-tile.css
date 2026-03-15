@@ -1,0 +1,73 @@
+.letter-tile {
+  display: inline-flex;
+  width: var(--card-width);
+  height: var(--card-height);
+  perspective: 600px;
+}
+
+.letter-tile--space {
+  width: calc(var(--card-width) * 0.5);
+  background: transparent;
+  border: none;
+}
+
+.letter-tile__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform var(--flip-duration) ease;
+  transform-style: preserve-3d;
+}
+
+.letter-tile--flipped .letter-tile__inner {
+  transform: rotateY(180deg);
+}
+
+.letter-tile__front,
+.letter-tile__back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  backface-visibility: hidden;
+  font-weight: 700;
+  font-size: var(--font-size-xl);
+  font-family: var(--font-family-display);
+}
+
+.letter-tile__front {
+  background: linear-gradient(
+    145deg,
+    var(--color-primary),
+    var(--color-primary-dark)
+  );
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    var(--shadow-sm);
+}
+
+.letter-tile__back {
+  background: linear-gradient(
+    145deg,
+    var(--color-bg-card),
+    var(--color-bg-elevated)
+  );
+  border: 2px solid var(--color-accent);
+  color: var(--color-accent);
+  transform: rotateY(180deg);
+  box-shadow:
+    0 0 12px rgba(253, 203, 110, 0.2),
+    var(--shadow-sm);
+}
+
+/* Responsive sizing */
+@media (max-width: 480px) {
+  .letter-tile {
+    --card-width: 2.5rem;
+    --card-height: 3.25rem;
+    font-size: var(--font-size-md);
+  }
+}
