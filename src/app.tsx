@@ -10,6 +10,11 @@ import { GameBoard } from "./features/game/components/game-board";
 import { RoundResultsScreen } from "./features/leaderboard/components/round-results-screen";
 import { GameOverScreen } from "./features/leaderboard/components/game-over-screen";
 import { useGame } from "./features/lobby/hooks/use-game";
+import {
+  saveGameSession,
+  loadGameSession,
+  clearGameSession,
+} from "./shared/hooks/use-game-session";
 import type { Game } from "./lib/types";
 import "./styles/theme.css";
 
@@ -23,7 +28,13 @@ type Screen =
 const AppContent = () => {
   const { user, loading } = useAuthContext();
   const { advanceRound, finishGame, subscribeToGame } = useGame();
-  const [screen, setScreen] = useState<Screen>({ type: "home" });
+  const [screen, setScreen] = useState<Screen>(() => {
+    const session = loadGameSession();
+    if (session) {
+      return { type: "waiting", gameId: session.gameId };
+    }
+    return { type: "home" };
+  });
   const [game, setGame] = useState<Game | null>(null);
   const [usedPhrases, setUsedPhrases] = useState<string[]>([]);
 
@@ -36,12 +47,33 @@ const AppContent = () => {
       return;
     }
     const unsubscribe = subscribeToGame(gameId, (updatedGame) => {
+      if (!updatedGame) {
+        // Game was deleted or doesn't exist anymore
+        clearGameSession();
+        setScreen({ type: "home" });
+        setGame(null);
+        return;
+      }
       setGame(updatedGame);
+
+      // Auto-navigate to the right screen on reconnect
+      if (screen.type === "waiting") {
+        if (updatedGame.status === "active") {
+          setScreen({
+            type: "playing",
+            gameId,
+            roundNumber: updatedGame.currentRound,
+          });
+        } else if (updatedGame.status === "finished") {
+          setScreen({ type: "game-over", gameId });
+        }
+      }
     });
     return unsubscribe;
   }, [screen, subscribeToGame]);
 
   const handleGameJoined = useCallback((gameId: string) => {
+    saveGameSession(gameId);
     setScreen({ type: "waiting", gameId });
     setUsedPhrases([]);
   }, []);
@@ -73,6 +105,7 @@ const AppContent = () => {
 
     if (isLastRound) {
       await finishGame(screen.gameId, game);
+      clearGameSession();
       setScreen({ type: "game-over", gameId: screen.gameId });
     } else {
       await advanceRound(screen.gameId, game, usedPhrases);
@@ -85,6 +118,7 @@ const AppContent = () => {
   }, [screen, game, advanceRound, finishGame, usedPhrases]);
 
   const handleLeave = useCallback(() => {
+    clearGameSession();
     setScreen({ type: "home" });
     setGame(null);
     setUsedPhrases([]);
