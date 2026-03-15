@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useAuthContext } from "../../auth/components/auth-provider";
 import { useGame } from "../hooks/use-game";
 import { parseGameCode } from "../../game/utils/game-code";
@@ -13,6 +13,28 @@ export const HomeScreen = ({ onGameJoined }: HomeScreenProps) => {
   const { createGame, joinGame, loading, error } = useGame();
   const [mode, setMode] = useState<"menu" | "join">("menu");
   const [joinCode, setJoinCode] = useState("");
+  const autoJoinAttempted = useRef(false);
+
+  // Auto-join if a ?code= query param is present
+  useEffect(() => {
+    if (!user || autoJoinAttempted.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (!code) return;
+
+    autoJoinAttempted.current = true;
+    const parsed = parseGameCode(code);
+    if (parsed.length < 4) return;
+
+    // Clear the query param so refreshing doesn't re-join
+    window.history.replaceState({}, "", window.location.pathname);
+
+    joinGame(parsed, user.uid, user.displayName || "Player")
+      .then((gameId) => onGameJoined(gameId))
+      .catch(() => {
+        // If join fails, stay on home screen — error state will show
+      });
+  }, [user, joinGame, onGameJoined]);
 
   const handleCreate = async () => {
     if (!user) return;
@@ -68,7 +90,7 @@ export const HomeScreen = ({ onGameJoined }: HomeScreenProps) => {
             <input
               className="home-screen__input"
               type="text"
-              placeholder="Enter game code (e.g. FLIPT-AB3D)"
+              placeholder="Enter game code (e.g. AB3D)"
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               maxLength={10}
