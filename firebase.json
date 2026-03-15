@@ -3,6 +3,10 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20"
+  },
   "hosting": {
     "public": "dist",
     "ignore": [
@@ -11,6 +15,10 @@
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/invite",
+        "function": "invite"
+      },
       {
         "source": "**",
         "destination": "/index.html"
@@ -26,6 +34,9 @@
     },
     "hosting": {
       "port": 5000
+    },
+    "functions": {
+      "port": 5001
     },
     "ui": {
       "enabled": true
