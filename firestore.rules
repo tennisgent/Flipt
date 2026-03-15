@@ -8,8 +8,11 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null
         && request.resource.data.hostUid == request.auth.uid;
+      // Allow joining a game that's still waiting, or updating if you're
+      // already a participant or the host
       allow update: if request.auth != null
-        && (request.auth.uid in resource.data.players
+        && (resource.data.status == "waiting"
+            || request.auth.uid in resource.data.players
             || request.auth.uid == resource.data.hostUid);
     }
 
