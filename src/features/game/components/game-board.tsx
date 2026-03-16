@@ -54,6 +54,13 @@ export const GameBoard = ({
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (solved || completed) return;
+      // Don't intercept keypresses when typing in the solve input
+      if (
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
       const key = e.key.toLowerCase();
       if (/^[a-z]$/.test(key)) {
         guessLetter(key);
