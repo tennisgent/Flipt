@@ -162,15 +162,16 @@ const AppContent = () => {
         />
       );
     case "playing":
-      return (
+      return game ? (
         <GameBoard
           key={`${screen.gameId}-${screen.roundNumber}`}
           gameId={screen.gameId}
+          game={game}
           roundNumber={screen.roundNumber}
           onRoundComplete={handleRoundComplete}
           onLeave={handleLeave}
         />
-      );
+      ) : null;
     case "round-results":
       return game ? (
         <RoundResultsScreen

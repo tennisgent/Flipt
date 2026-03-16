@@ -1,13 +1,17 @@
 import { useEffect, useCallback, useRef } from "react";
 import { useAuthContext } from "../../auth/components/auth-provider";
 import { useRound } from "../hooks/use-round";
+import { useRoundProgress } from "../hooks/use-round-progress";
+import { getUniqueLetters } from "../utils/scoring";
 import { PhraseDisplay } from "./phrase-display";
 import { Keyboard } from "./keyboard";
 import { SolveInput } from "./solve-input";
+import type { Game } from "../../../lib/types";
 import "./game-board.css";
 
 interface GameBoardProps {
   gameId: string;
+  game: Game;
   roundNumber: number;
   onRoundComplete: (score: number, roundId: string, phrase: string) => void;
   onLeave: () => void;
@@ -15,6 +19,7 @@ interface GameBoardProps {
 
 export const GameBoard = ({
   gameId,
+  game,
   roundNumber,
   onRoundComplete,
   onLeave,
@@ -38,6 +43,12 @@ export const GameBoard = ({
     giveUp,
   } = useRound(gameId, user?.uid || "", roundNumber);
 
+  const { otherProgress, writeProgress, flushProgress } = useRoundProgress(
+    round?.id ?? null,
+    gameId,
+    user?.uid || "",
+  );
+
   // Use refs for the auto-submit effect to avoid re-runs that cancel the timer.
   // If any of these were in the dependency array, changing them would re-trigger
   // the effect, run cleanup (clearTimeout), and kill the pending submission.
@@ -46,6 +57,25 @@ export const GameBoard = ({
   submitResultRef.current = submitResult;
   const onRoundCompleteRef = useRef(onRoundComplete);
   onRoundCompleteRef.current = onRoundComplete;
+
+  // Track and broadcast progress to other players
+  useEffect(() => {
+    if (!round || completed) return;
+    const phraseLetters = getUniqueLetters(round.phrase);
+    if (phraseLetters.size === 0) return;
+    const revealedCount = guessedLetters.filter((l) =>
+      phraseLetters.has(l),
+    ).length;
+    const percent = Math.round((revealedCount / phraseLetters.size) * 100);
+    writeProgress(percent);
+  }, [guessedLetters, round, completed, writeProgress]);
+
+  // Flush 100% immediately when solved so other players see it right away
+  useEffect(() => {
+    if (solved && round) {
+      flushProgress(100);
+    }
+  }, [solved, round, flushProgress]);
 
   const revealedLetters = new Set(guessedLetters);
   const wrongLetterSet = new Set(wrongLetters);
@@ -108,6 +138,30 @@ export const GameBoard = ({
           </span>
         </div>
       </div>
+
+      {otherProgress.length > 0 && (
+        <div className="game-board__progress">
+          {otherProgress.map((p) => {
+            const player = game.players[p.playerUid];
+            const name = player?.displayName || "Player";
+            const isFinished = p.percent >= 100;
+            return (
+              <div key={p.playerUid} className="game-board__progress-player">
+                <span className="game-board__progress-name">{name}</span>
+                <div className="game-board__progress-bar">
+                  <div
+                    className={`game-board__progress-fill${isFinished ? " game-board__progress-fill--done" : ""}`}
+                    style={{ width: `${p.percent}%` }}
+                  />
+                </div>
+                <span className="game-board__progress-percent">
+                  {p.percent}%
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {showHint && (
         <div className="game-board__hint">

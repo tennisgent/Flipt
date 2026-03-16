@@ -44,6 +44,60 @@
   border-radius: var(--radius-full);
 }
 
+.game-board__progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.game-board__progress-player {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.game-board__progress-name {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  min-width: 80px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.game-board__progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.game-board__progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease-out;
+}
+
+.game-board__progress-fill--done {
+  background: var(--color-success);
+}
+
+.game-board__progress-percent {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-dim);
+  min-width: 32px;
+  text-align: right;
+}
+
 .game-board__hint {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-accent);
