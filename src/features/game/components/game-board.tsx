@@ -36,7 +36,7 @@ export const GameBoard = ({
     revealHint,
     submitResult,
     giveUp,
-  } = useRound(gameId, user?.uid || "");
+  } = useRound(gameId, user?.uid || "", roundNumber);
 
   // Use refs for the auto-submit effect to avoid re-runs that cancel the timer.
   // If any of these were in the dependency array, changing them would re-trigger

@@ -26,7 +26,7 @@ interface RoundState {
   completed: boolean;
 }
 
-export const useRound = (gameId: string, playerUid: string) => {
+export const useRound = (gameId: string, playerUid: string, roundNumber?: number) => {
   const [state, setState] = useState<RoundState>({
     round: null,
     guessedLetters: [],
@@ -54,6 +54,14 @@ export const useRound = (gameId: string, playerUid: string) => {
         // There should only be one active round at a time
         const roundDoc = snapshot.docs[0];
         const round = { id: roundDoc.id, ...roundDoc.data() } as Round;
+
+        // If we know which round number we expect, ignore stale rounds
+        // that Firestore's local cache may return briefly (e.g. the
+        // previous round still marked "active" in cache).
+        if (roundNumber !== undefined && round.roundNumber !== roundNumber) {
+          return;
+        }
+
         setState((prev) => {
           // If the round changed, reset all local game state to prevent
           // stale guesses from a previous round bleeding through
@@ -77,7 +85,7 @@ export const useRound = (gameId: string, playerUid: string) => {
     });
 
     return unsubscribe;
-  }, [gameId]);
+  }, [gameId, roundNumber]);
 
   // Check if we already have a result for this round
   useEffect(() => {
