@@ -24,7 +24,7 @@ jobs:
       - run: cd functions && npm ci && npm run build
       - uses: w9jds/firebase-action@master
         with:
-          args: deploy --only functions --force
+          args: deploy --only functions,firestore --force
         env:
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FLIPT_GAME }}
           PROJECT_ID: flipt-game
