@@ -15,6 +15,26 @@ vi.mock("../hooks/use-round", () => ({
   useRound: (...args: unknown[]) => mockUseRound(...args),
 }));
 
+// Mock useRoundProgress
+vi.mock("../hooks/use-round-progress", () => ({
+  useRoundProgress: () => ({
+    otherProgress: [],
+    writeProgress: vi.fn(),
+    flushProgress: vi.fn(),
+  }),
+}));
+
+// Mock scoring utils (used for progress calculation)
+vi.mock("../utils/scoring", () => ({
+  getUniqueLetters: (phrase: string) => {
+    const letters = new Set<string>();
+    for (const ch of phrase.toLowerCase()) {
+      if (/[a-z]/.test(ch)) letters.add(ch);
+    }
+    return letters;
+  },
+}));
+
 // Stub child components so we don't need their internals
 vi.mock("./phrase-display", () => ({
   PhraseDisplay: () => <div data-testid="phrase-display" />,
@@ -67,10 +87,31 @@ const defaultHookReturn = {
   giveUp: vi.fn(),
 };
 
+const MOCK_GAME = {
+  id: "game-456",
+  code: "ABCD",
+  hostUid: "player-1",
+  status: "active" as const,
+  difficulty: "medium" as const,
+  players: {
+    "player-1": {
+      uid: "player-1",
+      displayName: "Player 1",
+      totalScore: 0,
+      roundsCompleted: 0,
+    },
+  },
+  currentRound: 1,
+  totalRounds: 3,
+  createdAt: new Date() as unknown as import("firebase/firestore").Timestamp,
+  updatedAt: new Date() as unknown as import("firebase/firestore").Timestamp,
+};
+
 const renderBoard = (onRoundComplete = vi.fn(), onLeave = vi.fn()) =>
   render(
     <GameBoard
       gameId="game-456"
+      game={MOCK_GAME}
       roundNumber={1}
       onRoundComplete={onRoundComplete}
       onLeave={onLeave}
@@ -203,6 +244,7 @@ describe("GameBoard", () => {
     const { rerender } = render(
       <GameBoard
         gameId="game-456"
+        game={MOCK_GAME}
         roundNumber={1}
         onRoundComplete={onRoundComplete}
         onLeave={vi.fn()}
@@ -222,6 +264,7 @@ describe("GameBoard", () => {
     rerender(
       <GameBoard
         gameId="game-456"
+        game={MOCK_GAME}
         roundNumber={1}
         onRoundComplete={onRoundComplete}
         onLeave={vi.fn()}
@@ -232,6 +275,7 @@ describe("GameBoard", () => {
     rerender(
       <GameBoard
         gameId="game-456"
+        game={MOCK_GAME}
         roundNumber={1}
         onRoundComplete={onRoundComplete}
         onLeave={vi.fn()}
