@@ -139,30 +139,6 @@ export const GameBoard = ({
         </div>
       </div>
 
-      {otherProgress.length > 0 && (
-        <div className="game-board__progress">
-          {otherProgress.map((p) => {
-            const player = game.players[p.playerUid];
-            const name = player?.displayName || "Player";
-            const isFinished = p.percent >= 100;
-            return (
-              <div key={p.playerUid} className="game-board__progress-player">
-                <span className="game-board__progress-name">{name}</span>
-                <div className="game-board__progress-bar">
-                  <div
-                    className={`game-board__progress-fill${isFinished ? " game-board__progress-fill--done" : ""}`}
-                    style={{ width: `${p.percent}%` }}
-                  />
-                </div>
-                <span className="game-board__progress-percent">
-                  {p.percent}%
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {showHint && (
         <div className="game-board__hint">
           <span className="game-board__hint-label">Category:</span>{" "}
@@ -228,6 +204,30 @@ export const GameBoard = ({
           </div>
         )}
       </div>
+
+      {otherProgress.length > 0 && (
+        <div className="game-board__progress">
+          {otherProgress.map((p) => {
+            const player = game.players[p.playerUid];
+            const name = player?.displayName || "Player";
+            const isFinished = p.percent >= 100;
+            return (
+              <div key={p.playerUid} className="game-board__progress-player">
+                <span className="game-board__progress-name">{name}</span>
+                <div className="game-board__progress-bar">
+                  <div
+                    className={`game-board__progress-fill${isFinished ? " game-board__progress-fill--done" : ""}`}
+                    style={{ width: `${p.percent}%` }}
+                  />
+                </div>
+                <span className="game-board__progress-percent">
+                  {p.percent}%
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <button className="game-board__leave" onClick={handleLeave}>
         Leave Game
