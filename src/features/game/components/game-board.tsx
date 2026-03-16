@@ -108,6 +108,9 @@ export const GameBoard = ({
     return (
       <div className="game-board">
         <div className="game-board__loading">Loading round...</div>
+        <button className="game-board__leave" onClick={handleLeave}>
+          Leave Game
+        </button>
       </div>
     );
   }
