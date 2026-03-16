@@ -10,7 +10,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
-import { calculateScore, isLetterInPhrase } from "../utils/scoring";
+import { calculateScore, getUniqueLetters, isLetterInPhrase } from "../utils/scoring";
 import { playSound } from "../utils/sound";
 import type { Round, RoundResult } from "../../../lib/types";
 
@@ -20,6 +20,7 @@ interface RoundState {
   wrongLetters: string[];
   solveAttempts: string[];
   solved: boolean;
+  solvedByGuessing: boolean;
   usedHint: boolean;
   showHint: boolean;
   score: number;
@@ -33,6 +34,7 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
     wrongLetters: [],
     solveAttempts: [],
     solved: false,
+    solvedByGuessing: false,
     usedHint: false,
     showHint: false,
     score: 0,
@@ -72,6 +74,7 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
               wrongLetters: [],
               solveAttempts: [],
               solved: false,
+              solvedByGuessing: false,
               usedHint: false,
               showHint: false,
               score: 0,
@@ -129,10 +132,22 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
 
       if (isLetterInPhrase(state.round.phrase, lower)) {
         playSound("correct");
-        setState((prev) => ({
-          ...prev,
-          guessedLetters: [...prev.guessedLetters, lower],
-        }));
+        setState((prev) => {
+          const newGuessed = [...prev.guessedLetters, lower];
+          // Check if all unique letters in the phrase are now revealed
+          const phraseLetters = getUniqueLetters(prev.round!.phrase);
+          const allRevealed = [...phraseLetters].every((l) =>
+            newGuessed.includes(l),
+          );
+          return {
+            ...prev,
+            guessedLetters: newGuessed,
+            // If all letters revealed, mark as solved but WITHOUT the
+            // solve bonus — solvedByGuessing flag tracks this distinction
+            solved: allRevealed ? true : prev.solved,
+            solvedByGuessing: allRevealed ? true : prev.solvedByGuessing,
+          };
+        });
       } else {
         playSound("buzz");
         setState((prev) => ({
@@ -178,12 +193,15 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
   const submitResult = useCallback(async () => {
     if (!state.round || state.completed) return;
 
+    // When solved by guessing every letter, don't award the +10 solve bonus
+    const solvedForScoring = state.solved && !state.solvedByGuessing;
+
     const score = calculateScore({
       phrase: state.round.phrase,
       guessedLetters: state.guessedLetters,
       wrongLetters: state.wrongLetters,
       solveAttempts: state.solveAttempts,
-      solved: state.solved,
+      solved: solvedForScoring,
       usedHint: state.usedHint,
     });
 
@@ -212,6 +230,7 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
     state.wrongLetters,
     state.solveAttempts,
     state.solved,
+    state.solvedByGuessing,
     state.usedHint,
     gameId,
     playerUid,
