@@ -142,6 +142,7 @@ export const useGame = () => {
       await updateDoc(gameRef, {
         status: "active",
         difficulty,
+        totalRounds,
         currentRound: 1,
         updatedAt: serverTimestamp(),
       });
