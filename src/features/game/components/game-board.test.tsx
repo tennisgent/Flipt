@@ -274,36 +274,6 @@ describe("GameBoard", () => {
     );
   });
 
-  it("forwards keyboard events to guessLetter", () => {
-    const mockGuessLetter = vi.fn();
-    mockUseRound.mockReturnValue({
-      ...defaultHookReturn,
-      guessLetter: mockGuessLetter,
-    });
-
-    renderBoard();
-
-    fireEvent.keyDown(window, { key: "t" });
-    expect(mockGuessLetter).toHaveBeenCalledWith("t");
-
-    fireEvent.keyDown(window, { key: "E" });
-    expect(mockGuessLetter).toHaveBeenCalledWith("e");
-  });
-
-  it("ignores keyboard events when solved", () => {
-    const mockGuessLetter = vi.fn();
-    mockUseRound.mockReturnValue({
-      ...defaultHookReturn,
-      solved: true,
-      guessLetter: mockGuessLetter,
-    });
-
-    renderBoard();
-
-    fireEvent.keyDown(window, { key: "t" });
-    expect(mockGuessLetter).not.toHaveBeenCalled();
-  });
-
   it("shows hint when showHint is true", () => {
     mockUseRound.mockReturnValue({
       ...defaultHookReturn,

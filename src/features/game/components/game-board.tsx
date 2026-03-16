@@ -50,30 +50,6 @@ export const GameBoard = ({
   const revealedLetters = new Set(guessedLetters);
   const wrongLetterSet = new Set(wrongLetters);
 
-  // Handle physical keyboard
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (solved || completed) return;
-      // Don't intercept keypresses when typing in the solve input
-      if (
-        document.activeElement instanceof HTMLInputElement ||
-        document.activeElement instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
-      const key = e.key.toLowerCase();
-      if (/^[a-z]$/.test(key)) {
-        guessLetter(key);
-      }
-    },
-    [guessLetter, solved, completed],
-  );
-
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
-
   // Auto-submit when solved
   useEffect(() => {
     if (solved && !submittedRef.current && !completed && round) {
