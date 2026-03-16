@@ -50,6 +50,7 @@
   gap: var(--space-xs);
   width: 100%;
   max-width: 600px;
+  margin-top: var(--space-lg);
   margin-bottom: var(--space-md);
   padding: var(--space-sm) var(--space-md);
   background: var(--color-bg-surface);
