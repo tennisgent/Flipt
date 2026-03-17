@@ -143,6 +143,28 @@
   text-align: right;
 }
 
+.round-results__rank-progress {
+  flex: 1;
+  height: 8px;
+  background: var(--color-bg);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  max-width: 120px;
+  margin-left: auto;
+}
+
+.round-results__rank-progress-bar {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease;
+}
+
+.round-results__rank-progress-bar--done {
+  background: var(--color-success);
+}
+
 .round-results__continue {
   background: linear-gradient(
     135deg,

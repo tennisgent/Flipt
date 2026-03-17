@@ -1,6 +1,19 @@
+import { useState, useEffect } from "react";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "../../../lib/firebase";
 import { useRoundResults } from "../hooks/use-round-results";
 import type { Game } from "../../../lib/types";
 import "./round-results-screen.css";
+
+interface PlayerProgress {
+  playerUid: string;
+  percent: number;
+}
 
 interface RoundResultsScreenProps {
   game: Game;
@@ -20,8 +33,34 @@ export const RoundResultsScreen = ({
   isLastRound,
 }: RoundResultsScreenProps) => {
   const { results, loading } = useRoundResults(roundId);
+  const [progress, setProgress] = useState<PlayerProgress[]>([]);
 
-  const totalPlayers = Object.keys(game.players).length;
+  // Subscribe to in-progress players' progress
+  useEffect(() => {
+    if (!roundId) return;
+
+    const q = query(
+      collection(db, "round-progress"),
+      where("roundId", "==", roundId),
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data: PlayerProgress[] = [];
+      snapshot.docs.forEach((d) => {
+        const doc = d.data();
+        data.push({
+          playerUid: doc.playerUid as string,
+          percent: doc.percent as number,
+        });
+      });
+      setProgress(data);
+    });
+
+    return unsubscribe;
+  }, [roundId]);
+
+  const allPlayers = Object.entries(game.players);
+  const totalPlayers = allPlayers.length;
   const allFinished = results.length >= totalPlayers;
   const myResult = results.find((r) => r.playerUid === playerUid);
 
@@ -32,6 +71,33 @@ export const RoundResultsScreen = ({
       </div>
     );
   }
+
+  // Build a unified list: all players, sorted by finished first (by score),
+  // then in-progress players (by progress %)
+  const finishedUids = new Set(results.map((r) => r.playerUid));
+
+  const playerEntries = allPlayers.map(([uid, player]) => {
+    const result = results.find((r) => r.playerUid === uid);
+    const prog = progress.find((p) => p.playerUid === uid);
+    return {
+      uid,
+      displayName: player.displayName,
+      isMe: uid === playerUid,
+      finished: finishedUids.has(uid),
+      result,
+      percent: prog?.percent ?? 0,
+    };
+  });
+
+  // Sort: finished players first (by score desc), then in-progress (by % desc)
+  playerEntries.sort((a, b) => {
+    if (a.finished && !b.finished) return -1;
+    if (!a.finished && b.finished) return 1;
+    if (a.finished && b.finished) {
+      return (b.result?.score ?? 0) - (a.result?.score ?? 0);
+    }
+    return b.percent - a.percent;
+  });
 
   return (
     <div className="round-results">
@@ -69,31 +135,45 @@ export const RoundResultsScreen = ({
               : `Waiting for players... (${results.length}/${totalPlayers})`}
           </h3>
           <ol className="round-results__rankings">
-            {results.map((result, index) => {
-              const player = game.players[result.playerUid];
-              const isMe = result.playerUid === playerUid;
-              return (
-                <li
-                  key={result.id}
-                  className={`round-results__rank ${isMe ? "round-results__rank--me" : ""}`}
-                >
-                  <span className="round-results__rank-position">
-                    {index + 1}
+            {playerEntries.map((entry, index) => (
+              <li
+                key={entry.uid}
+                className={`round-results__rank ${entry.isMe ? "round-results__rank--me" : ""}`}
+              >
+                <span className="round-results__rank-position">
+                  {index + 1}
+                </span>
+                <span className="round-results__rank-name">
+                  {entry.displayName}
+                  {entry.isMe && " (you)"}
+                </span>
+                {entry.finished && allFinished ? (
+                  <>
+                    <span className="round-results__rank-details">
+                      {entry.result?.solved ? "Solved" : "Unsolved"}
+                    </span>
+                    <span className="round-results__rank-score">
+                      {(entry.result?.score ?? 0) >= 0 ? "+" : ""}
+                      {entry.result?.score ?? 0}
+                    </span>
+                  </>
+                ) : entry.finished ? (
+                  <span className="round-results__rank-progress">
+                    <span
+                      className="round-results__rank-progress-bar round-results__rank-progress-bar--done"
+                      style={{ width: "100%" }}
+                    />
                   </span>
-                  <span className="round-results__rank-name">
-                    {player?.displayName || "Unknown"}
-                    {isMe && " (you)"}
+                ) : (
+                  <span className="round-results__rank-progress">
+                    <span
+                      className="round-results__rank-progress-bar"
+                      style={{ width: `${entry.percent}%` }}
+                    />
                   </span>
-                  <span className="round-results__rank-details">
-                    {result.solved ? "Solved" : "Unsolved"}
-                  </span>
-                  <span className="round-results__rank-score">
-                    {result.score >= 0 ? "+" : ""}
-                    {result.score}
-                  </span>
-                </li>
-              );
-            })}
+                )}
+              </li>
+            ))}
           </ol>
         </div>
 
