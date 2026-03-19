@@ -51,7 +51,7 @@ export const invite = onRequest(async (req, res) => {
   const description = playerCount > 1
     ? `Join ${playerCount} players in a multiplayer phrase-guessing game.`
     : "Join a multiplayer phrase-guessing game.";
-  const appUrl = `/?code=${encodeURIComponent(code)}`;
+  const appUrl = `/${code}`;
 
   // Return HTML with OG tags + instant redirect for real browsers
   res.set("Cache-Control", "public, max-age=60, s-maxage=300");
@@ -67,7 +67,7 @@ export const invite = onRequest(async (req, res) => {
   <meta property="og:title" content="${escapeAttr(title)}" />
   <meta property="og:description" content="${escapeAttr(description)}" />
   <meta property="og:image" content="https://flipt-game.web.app/og-image.png" />
-  <meta property="og:url" content="https://flipt-game.web.app${appUrl}" />
+  <meta property="og:url" content="https://flipt-game.web.app/${code}" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />

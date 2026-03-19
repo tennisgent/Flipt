@@ -1,22 +1,26 @@
-import type { Game } from "../../../lib/types";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAuthContext } from "../../auth/components/auth-provider";
+import { useGameContext } from "../../game/components/game-layout";
+import { removeGameSession } from "../../../shared/hooks/use-game-session";
 import "./game-over-screen.css";
 
-interface GameOverScreenProps {
-  game: Game;
-  playerUid: string;
-  onPlayAgain: () => void;
-}
+export const GameOverScreen = () => {
+  const { code } = useParams<{ code: string }>();
+  const { game } = useGameContext();
+  const { user } = useAuthContext();
+  const navigate = useNavigate();
+  const playerUid = user?.uid || "";
 
-export const GameOverScreen = ({
-  game,
-  playerUid,
-  onPlayAgain,
-}: GameOverScreenProps) => {
   const players = Object.values(game.players).sort(
     (a, b) => b.totalScore - a.totalScore,
   );
   const winner = players[0];
   const isWinner = winner?.uid === playerUid;
+
+  const handlePlayAgain = () => {
+    if (code) removeGameSession(code);
+    navigate("/");
+  };
 
   return (
     <div className="game-over">
@@ -58,7 +62,7 @@ export const GameOverScreen = ({
           })}
         </ol>
 
-        <button className="game-over__play-again" onClick={onPlayAgain}>
+        <button className="game-over__play-again" onClick={handlePlayAgain}>
           Play Again
         </button>
       </div>

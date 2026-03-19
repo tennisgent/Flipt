@@ -1,48 +1,26 @@
-import { useState, useEffect, useRef, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../auth/components/auth-provider";
 import { useGame } from "../hooks/use-game";
 import { parseGameCode } from "../../game/utils/game-code";
+import { addGameSession } from "../../../shared/hooks/use-game-session";
 import "./home-screen.css";
 
-interface HomeScreenProps {
-  onGameJoined: (gameId: string) => void;
-}
-
-export const HomeScreen = ({ onGameJoined }: HomeScreenProps) => {
+export const HomeScreen = () => {
   const { user } = useAuthContext();
-  const { createGame, joinGame, loading, error } = useGame();
+  const { createGame, loading, error } = useGame();
+  const navigate = useNavigate();
   const [mode, setMode] = useState<"menu" | "join">("menu");
   const [joinCode, setJoinCode] = useState("");
-  const autoJoinAttempted = useRef(false);
-
-  // Auto-join if a ?code= query param is present
-  useEffect(() => {
-    if (!user || autoJoinAttempted.current) return;
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    if (!code) return;
-
-    autoJoinAttempted.current = true;
-    const parsed = parseGameCode(code);
-    if (parsed.length < 4) return;
-
-    // Clear the query param so refreshing doesn't re-join
-    window.history.replaceState({}, "", window.location.pathname);
-
-    joinGame(parsed, user.uid, user.displayName || "Player")
-      .then((gameId) => onGameJoined(gameId))
-      .catch(() => {
-        // If join fails, stay on home screen — error state will show
-      });
-  }, [user, joinGame, onGameJoined]);
 
   const handleCreate = async () => {
     if (!user) return;
-    const gameId = await createGame(
+    const { code } = await createGame(
       user.uid,
       user.displayName || "Player",
     );
-    onGameJoined(gameId);
+    addGameSession(code);
+    navigate(`/${code}`);
   };
 
   const handleJoin = async (e: FormEvent) => {
@@ -50,12 +28,8 @@ export const HomeScreen = ({ onGameJoined }: HomeScreenProps) => {
     if (!user) return;
     const code = parseGameCode(joinCode);
     if (code.length < 4) return;
-    const gameId = await joinGame(
-      code,
-      user.uid,
-      user.displayName || "Player",
-    );
-    onGameJoined(gameId);
+    // Navigate to the game — GameLayout will handle auto-join
+    navigate(`/${code}`);
   };
 
   return (
@@ -90,7 +64,7 @@ export const HomeScreen = ({ onGameJoined }: HomeScreenProps) => {
             <input
               className="home-screen__input"
               type="text"
-              placeholder="Enter game code (e.g. AB3D)"
+              placeholder="Enter game code"
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               maxLength={10}

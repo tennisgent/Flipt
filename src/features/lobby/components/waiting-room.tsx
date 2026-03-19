@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuthContext } from "../../auth/components/auth-provider";
 import { useGame } from "../hooks/use-game";
+import { useGameContext } from "../../game/components/game-layout";
+import { removeGameSession } from "../../../shared/hooks/use-game-session";
 import { formatGameCode } from "../../game/utils/game-code";
-import type { Difficulty, Game } from "../../../lib/types";
+import type { Difficulty } from "../../../lib/types";
 import "./waiting-room.css";
-
-interface WaitingRoomProps {
-  gameId: string;
-  onGameStart: () => void;
-  onLeave: () => void;
-}
 
 const DIFFICULTY_OPTIONS: {
   value: Difficulty;
@@ -26,30 +23,27 @@ const DIFFICULTY_OPTIONS: {
   },
 ];
 
-export const WaitingRoom = ({
-  gameId,
-  onGameStart,
-  onLeave,
-}: WaitingRoomProps) => {
+export const WaitingRoom = () => {
+  const { code } = useParams<{ code: string }>();
+  const { game, gameId } = useGameContext();
   const { user } = useAuthContext();
-  const { startGame, subscribeToGame, loading } = useGame();
-  const [game, setGame] = useState<Game | null>(null);
+  const { startGame, loading } = useGame();
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [totalRounds, setTotalRounds] = useState(3);
 
+  // Auto-navigate when game starts
   useEffect(() => {
-    const unsubscribe = subscribeToGame(gameId, (updatedGame) => {
-      setGame(updatedGame);
-      if (updatedGame.status === "active") {
-        onGameStart();
-      }
-    });
-    return unsubscribe;
-  }, [gameId, subscribeToGame, onGameStart]);
+    if (game.status === "active") {
+      navigate(`/${code}/${game.currentRound}`, { replace: true });
+    } else if (game.status === "finished") {
+      navigate(`/${code}/final`, { replace: true });
+    }
+  }, [game.status, game.currentRound, code, navigate]);
 
   const handleCopyCode = async () => {
-    if (!game) return;
+    // Use /invite URL for sharing so bots get OG preview tags
     const url = `${window.location.origin}/invite?code=${formatGameCode(game.code)}`;
     await navigator.clipboard.writeText(url);
     setCopied(true);
@@ -57,19 +51,13 @@ export const WaitingRoom = ({
   };
 
   const handleStart = () => {
-    if (!game) return;
     startGame(gameId, difficulty, totalRounds);
   };
 
-  if (!game) {
-    return (
-      <div className="waiting-room">
-        <div className="waiting-room__card">
-          <p className="waiting-room__loading">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleLeave = () => {
+    if (code) removeGameSession(code);
+    navigate("/");
+  };
 
   const players = Object.values(game.players);
   const isHost = user?.uid === game.hostUid;
@@ -178,7 +166,7 @@ export const WaitingRoom = ({
           )}
           <button
             className="waiting-room__button waiting-room__button--leave"
-            onClick={onLeave}
+            onClick={handleLeave}
           >
             Leave
           </button>

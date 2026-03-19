@@ -1,5 +1,5 @@
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const CODE_LENGTH = 4;
+const CODE_LENGTH = 6;
 
 export const generateGameCode = (): string => {
   let code = "";

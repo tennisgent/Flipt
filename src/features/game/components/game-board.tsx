@@ -1,30 +1,23 @@
 import { useEffect, useCallback, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../auth/components/auth-provider";
+import { useGameContext } from "./game-layout";
 import { useRound } from "../hooks/use-round";
 import { useRoundProgress } from "../hooks/use-round-progress";
 import { getUniqueLetters } from "../utils/scoring";
+import { removeGameSession } from "../../../shared/hooks/use-game-session";
 import { PhraseDisplay } from "./phrase-display";
 import { Keyboard } from "./keyboard";
 import { SolveInput } from "./solve-input";
-import type { Game } from "../../../lib/types";
 import "./game-board.css";
 
-interface GameBoardProps {
-  gameId: string;
-  game: Game;
-  roundNumber: number;
-  onRoundComplete: (score: number, roundId: string, phrase: string) => void;
-  onLeave: () => void;
-}
-
-export const GameBoard = ({
-  gameId,
-  game,
-  roundNumber,
-  onRoundComplete,
-  onLeave,
-}: GameBoardProps) => {
+export const GameBoard = () => {
+  const { code, roundNum } = useParams<{ code: string; roundNum: string }>();
+  const roundNumber = Number(roundNum);
+  const { game, gameId } = useGameContext();
   const { user } = useAuthContext();
+  const navigate = useNavigate();
+
   const {
     round,
     guessedLetters,
@@ -33,7 +26,6 @@ export const GameBoard = ({
     solved,
     usedHint,
     showHint,
-    score,
     completed,
     loading,
     guessLetter,
@@ -49,14 +41,14 @@ export const GameBoard = ({
     user?.uid || "",
   );
 
-  // Use refs for the auto-submit effect to avoid re-runs that cancel the timer.
-  // If any of these were in the dependency array, changing them would re-trigger
-  // the effect, run cleanup (clearTimeout), and kill the pending submission.
   const submittedRef = useRef(false);
   const submitResultRef = useRef(submitResult);
   submitResultRef.current = submitResult;
-  const onRoundCompleteRef = useRef(onRoundComplete);
-  onRoundCompleteRef.current = onRoundComplete;
+
+  // Reset submittedRef when round changes
+  useEffect(() => {
+    submittedRef.current = false;
+  }, [roundNumber]);
 
   // Track and broadcast progress to other players
   useEffect(() => {
@@ -70,7 +62,7 @@ export const GameBoard = ({
     writeProgress(percent);
   }, [guessedLetters, round, completed, writeProgress]);
 
-  // Flush 100% immediately when solved so other players see it right away
+  // Flush 100% immediately when solved
   useEffect(() => {
     if (solved && round) {
       flushProgress(100);
@@ -80,42 +72,43 @@ export const GameBoard = ({
   const revealedLetters = new Set(guessedLetters);
   const wrongLetterSet = new Set(wrongLetters);
 
+  const navigateToResults = useCallback(() => {
+    navigate(`/${code}/${roundNumber}/results`, { replace: true });
+  }, [code, roundNumber, navigate]);
+
   // Auto-submit when solved
   useEffect(() => {
     if (solved && !submittedRef.current && !completed && round) {
       submittedRef.current = true;
       const timer = setTimeout(async () => {
-        const finalScore = await submitResultRef.current();
-        if (finalScore !== undefined) {
-          onRoundCompleteRef.current(finalScore, round.id, round.phrase);
-        }
+        await submitResultRef.current();
+        navigateToResults();
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [solved, completed, round]);
+  }, [solved, completed, round, navigateToResults]);
 
   // If round was already completed (e.g. page refresh after submitting),
-  // skip straight to round results using the score from the existing result.
+  // skip straight to round results
   useEffect(() => {
     if (completed && round && submittedRef.current === false) {
       submittedRef.current = true;
-      onRoundCompleteRef.current(score, round.id, round.phrase);
+      navigateToResults();
     }
-  }, [completed, round, score]);
+  }, [completed, round, navigateToResults]);
 
   const handleGiveUp = useCallback(async () => {
     if (!round) return;
-    const finalScore = await giveUp();
-    if (finalScore !== undefined) {
-      onRoundComplete(finalScore, round.id, round.phrase);
-    }
-  }, [giveUp, onRoundComplete, round]);
+    await giveUp();
+    navigateToResults();
+  }, [giveUp, round, navigateToResults]);
 
   const handleLeave = useCallback(() => {
     if (window.confirm("Leave this game? Your progress will be lost.")) {
-      onLeave();
+      if (code) removeGameSession(code);
+      navigate("/");
     }
-  }, [onLeave]);
+  }, [code, navigate]);
 
   if (loading || !round) {
     return (

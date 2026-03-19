@@ -1,25 +1,29 @@
-const STORAGE_KEY = "flipt-active-game";
+const STORAGE_KEY = "flipt-games";
 
-interface GameSession {
-  gameId: string;
-}
-
-export const saveGameSession = (gameId: string): void => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ gameId }));
-};
-
-export const loadGameSession = (): GameSession | null => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as GameSession;
-    if (parsed.gameId) return parsed;
-    return null;
-  } catch {
-    return null;
+export const addGameSession = (code: string): void => {
+  const codes = loadGameSessions();
+  const upper = code.toUpperCase();
+  if (!codes.includes(upper)) {
+    codes.unshift(upper);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(codes));
   }
 };
 
-export const clearGameSession = (): void => {
-  localStorage.removeItem(STORAGE_KEY);
+export const removeGameSession = (code: string): void => {
+  const codes = loadGameSessions().filter(
+    (c) => c !== code.toUpperCase(),
+  );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(codes));
+};
+
+export const loadGameSessions = (): string[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) return parsed as string[];
+    return [];
+  } catch {
+    return [];
+  }
 };

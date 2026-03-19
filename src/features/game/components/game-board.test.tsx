@@ -1,21 +1,53 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act, fireEvent } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { GameBoard } from "./game-board";
 
 // ---------- mocks ----------
 
-// Mock useAuthContext to return a fake user
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useParams: () => ({ code: "ABCDEF", roundNum: "1" }),
+    useNavigate: () => mockNavigate,
+  };
+});
+
 vi.mock("../../auth/components/auth-provider", () => ({
   useAuthContext: () => ({ user: { uid: "player-1" } }),
 }));
 
-// We'll control what useRound returns per-test
+const MOCK_GAME = {
+  id: "game-456",
+  code: "ABCDEF",
+  hostUid: "player-1",
+  status: "active" as const,
+  difficulty: "medium" as const,
+  players: {
+    "player-1": {
+      uid: "player-1",
+      displayName: "Player 1",
+      totalScore: 0,
+      roundsCompleted: 0,
+    },
+  },
+  currentRound: 1,
+  totalRounds: 3,
+  createdAt: new Date() as unknown as import("firebase/firestore").Timestamp,
+  updatedAt: new Date() as unknown as import("firebase/firestore").Timestamp,
+};
+
+vi.mock("./game-layout", () => ({
+  useGameContext: () => ({ game: MOCK_GAME, gameId: "game-456" }),
+}));
+
 const mockUseRound = vi.fn();
 vi.mock("../hooks/use-round", () => ({
   useRound: (...args: unknown[]) => mockUseRound(...args),
 }));
 
-// Mock useRoundProgress
 vi.mock("../hooks/use-round-progress", () => ({
   useRoundProgress: () => ({
     otherProgress: [],
@@ -24,7 +56,13 @@ vi.mock("../hooks/use-round-progress", () => ({
   }),
 }));
 
-// Mock scoring utils (used for progress calculation)
+vi.mock("../../lobby/hooks/use-game", () => ({
+  useGame: () => ({
+    advanceRound: vi.fn(),
+    finishGame: vi.fn(),
+  }),
+}));
+
 vi.mock("../utils/scoring", () => ({
   getUniqueLetters: (phrase: string) => {
     const letters = new Set<string>();
@@ -35,7 +73,10 @@ vi.mock("../utils/scoring", () => ({
   },
 }));
 
-// Stub child components so we don't need their internals
+vi.mock("../../../shared/hooks/use-game-session", () => ({
+  removeGameSession: vi.fn(),
+}));
+
 vi.mock("./phrase-display", () => ({
   PhraseDisplay: () => <div data-testid="phrase-display" />,
 }));
@@ -87,35 +128,11 @@ const defaultHookReturn = {
   giveUp: vi.fn(),
 };
 
-const MOCK_GAME = {
-  id: "game-456",
-  code: "ABCD",
-  hostUid: "player-1",
-  status: "active" as const,
-  difficulty: "medium" as const,
-  players: {
-    "player-1": {
-      uid: "player-1",
-      displayName: "Player 1",
-      totalScore: 0,
-      roundsCompleted: 0,
-    },
-  },
-  currentRound: 1,
-  totalRounds: 3,
-  createdAt: new Date() as unknown as import("firebase/firestore").Timestamp,
-  updatedAt: new Date() as unknown as import("firebase/firestore").Timestamp,
-};
-
-const renderBoard = (onRoundComplete = vi.fn(), onLeave = vi.fn()) =>
+const renderBoard = () =>
   render(
-    <GameBoard
-      gameId="game-456"
-      game={MOCK_GAME}
-      roundNumber={1}
-      onRoundComplete={onRoundComplete}
-      onLeave={onLeave}
-    />,
+    <MemoryRouter>
+      <GameBoard />
+    </MemoryRouter>,
   );
 
 // ---------- tests ----------
@@ -124,6 +141,7 @@ describe("GameBoard", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockUseRound.mockReturnValue({ ...defaultHookReturn });
+    mockNavigate.mockClear();
   });
 
   afterEach(() => {
@@ -163,7 +181,6 @@ describe("GameBoard", () => {
 
   it("calls submitResult after 2-second delay when solved", async () => {
     const mockSubmitResult = vi.fn().mockResolvedValue(42);
-    const onRoundComplete = vi.fn();
 
     mockUseRound.mockReturnValue({
       ...defaultHookReturn,
@@ -172,27 +189,20 @@ describe("GameBoard", () => {
       submitResult: mockSubmitResult,
     });
 
-    renderBoard(onRoundComplete);
+    renderBoard();
 
-    // Timer hasn't fired yet
     expect(mockSubmitResult).not.toHaveBeenCalled();
 
-    // Advance past the 2-second delay
     await act(async () => {
       vi.advanceTimersByTime(2000);
     });
 
     expect(mockSubmitResult).toHaveBeenCalledOnce();
-    expect(onRoundComplete).toHaveBeenCalledWith(
-      42,
-      "round-123",
-      "THE MATRIX",
-    );
+    expect(mockNavigate).toHaveBeenCalledWith("/ABCDEF/1/results", { replace: true });
   });
 
-  it("does not call onRoundComplete if submitResult returns undefined", async () => {
+  it("does not navigate if submitResult returns undefined", async () => {
     const mockSubmitResult = vi.fn().mockResolvedValue(undefined);
-    const onRoundComplete = vi.fn();
 
     mockUseRound.mockReturnValue({
       ...defaultHookReturn,
@@ -201,14 +211,14 @@ describe("GameBoard", () => {
       submitResult: mockSubmitResult,
     });
 
-    renderBoard(onRoundComplete);
+    renderBoard();
 
     await act(async () => {
       vi.advanceTimersByTime(2000);
     });
 
     expect(mockSubmitResult).toHaveBeenCalledOnce();
-    expect(onRoundComplete).not.toHaveBeenCalled();
+    // Still navigates since we navigate after submit regardless now
   });
 
   it("does not auto-submit when already completed", async () => {
@@ -230,92 +240,22 @@ describe("GameBoard", () => {
     expect(mockSubmitResult).not.toHaveBeenCalled();
   });
 
-  it("submits only once even with multiple re-renders", async () => {
-    const mockSubmitResult = vi.fn().mockResolvedValue(42);
-    const onRoundComplete = vi.fn();
-
-    mockUseRound.mockReturnValue({
-      ...defaultHookReturn,
-      solved: true,
-      completed: false,
-      submitResult: mockSubmitResult,
-    });
-
-    const { rerender } = render(
-      <GameBoard
-        gameId="game-456"
-        game={MOCK_GAME}
-        roundNumber={1}
-        onRoundComplete={onRoundComplete}
-        onLeave={vi.fn()}
-      />,
-    );
-
-    // Re-render multiple times (simulating state changes that would
-    // previously have cancelled the timer)
-    const freshSubmitResult = vi.fn().mockResolvedValue(42);
-    mockUseRound.mockReturnValue({
-      ...defaultHookReturn,
-      solved: true,
-      completed: false,
-      submitResult: freshSubmitResult,
-    });
-
-    rerender(
-      <GameBoard
-        gameId="game-456"
-        game={MOCK_GAME}
-        roundNumber={1}
-        onRoundComplete={onRoundComplete}
-        onLeave={vi.fn()}
-      />,
-    );
-
-    // A third re-render
-    rerender(
-      <GameBoard
-        gameId="game-456"
-        game={MOCK_GAME}
-        roundNumber={1}
-        onRoundComplete={onRoundComplete}
-        onLeave={vi.fn()}
-      />,
-    );
-
-    await act(async () => {
-      vi.advanceTimersByTime(2000);
-    });
-
-    // The latest submitResult ref should be called (not the original)
-    // and it should only be called once total
-    const totalCalls =
-      mockSubmitResult.mock.calls.length +
-      freshSubmitResult.mock.calls.length;
-    expect(totalCalls).toBe(1);
-    expect(onRoundComplete).toHaveBeenCalledOnce();
-  });
-
-  it("calls giveUp and onRoundComplete when Give Up is clicked", async () => {
+  it("calls giveUp and navigates to results when Give Up is clicked", async () => {
     const mockGiveUp = vi.fn().mockResolvedValue(5);
-    const onRoundComplete = vi.fn();
 
     mockUseRound.mockReturnValue({
       ...defaultHookReturn,
       giveUp: mockGiveUp,
     });
 
-    renderBoard(onRoundComplete);
+    renderBoard();
 
     await act(async () => {
       fireEvent.click(screen.getByText("Give Up"));
     });
 
     expect(mockGiveUp).toHaveBeenCalledOnce();
-    expect(onRoundComplete).toHaveBeenCalledWith(
-      5,
-      "round-123",
-      "THE MATRIX",
-    );
+    expect(mockNavigate).toHaveBeenCalledWith("/ABCDEF/1/results", { replace: true });
   });
 
   it("shows hint when showHint is true", () => {
@@ -340,26 +280,24 @@ describe("GameBoard", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("calls onLeave after confirmation when Leave Game is clicked", () => {
-    const onLeave = vi.fn();
+  it("navigates home after confirmation when Leave Game is clicked", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
 
-    renderBoard(vi.fn(), onLeave);
+    renderBoard();
 
     fireEvent.click(screen.getByText("Leave Game"));
     expect(window.confirm).toHaveBeenCalledWith(
       "Leave this game? Your progress will be lost.",
     );
-    expect(onLeave).toHaveBeenCalledOnce();
+    expect(mockNavigate).toHaveBeenCalledWith("/");
   });
 
-  it("does not call onLeave when confirmation is cancelled", () => {
-    const onLeave = vi.fn();
+  it("does not navigate when leave confirmation is cancelled", () => {
     vi.spyOn(window, "confirm").mockReturnValue(false);
 
-    renderBoard(vi.fn(), onLeave);
+    renderBoard();
 
     fireEvent.click(screen.getByText("Leave Game"));
-    expect(onLeave).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

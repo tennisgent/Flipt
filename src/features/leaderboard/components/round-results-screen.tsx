@@ -1,13 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   collection,
   query,
   where,
   onSnapshot,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
+import { useAuthContext } from "../../auth/components/auth-provider";
+import { useGameContext } from "../../game/components/game-layout";
+import { useGame } from "../../lobby/hooks/use-game";
 import { useRoundResults } from "../hooks/use-round-results";
-import type { Game } from "../../../lib/types";
 import "./round-results-screen.css";
 
 interface PlayerProgress {
@@ -15,35 +19,42 @@ interface PlayerProgress {
   percent: number;
 }
 
-interface RoundResultsScreenProps {
-  game: Game;
-  roundId: string;
-  roundNumber: number;
-  playerUid: string;
-  onContinue: () => void;
-  isLastRound: boolean;
-}
+export const RoundResultsScreen = () => {
+  const { code, roundNum } = useParams<{ code: string; roundNum: string }>();
+  const roundNumber = Number(roundNum);
+  const { game, gameId } = useGameContext();
+  const { user } = useAuthContext();
+  const { advanceRound, finishGame } = useGame();
+  const navigate = useNavigate();
+  const playerUid = user?.uid || "";
 
-export const RoundResultsScreen = ({
-  game,
-  roundId,
-  roundNumber,
-  playerUid,
-  onContinue,
-  isLastRound,
-}: RoundResultsScreenProps) => {
-  const { results, loading } = useRoundResults(roundId);
+  // Look up roundId from Firestore by gameId + roundNumber
+  const [roundId, setRoundId] = useState<string | null>(null);
+  useEffect(() => {
+    const roundsRef = collection(db, "rounds");
+    const q = query(
+      roundsRef,
+      where("gameId", "==", gameId),
+      where("roundNumber", "==", roundNumber),
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        setRoundId(snapshot.docs[0].id);
+      }
+    });
+    return unsubscribe;
+  }, [gameId, roundNumber]);
+
+  const { results, loading } = useRoundResults(roundId || "");
   const [progress, setProgress] = useState<PlayerProgress[]>([]);
 
   // Subscribe to in-progress players' progress
   useEffect(() => {
     if (!roundId) return;
-
     const q = query(
       collection(db, "round-progress"),
       where("roundId", "==", roundId),
     );
-
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data: PlayerProgress[] = [];
       snapshot.docs.forEach((d) => {
@@ -55,16 +66,33 @@ export const RoundResultsScreen = ({
       });
       setProgress(data);
     });
-
     return unsubscribe;
   }, [roundId]);
+
+  const isLastRound = roundNumber >= game.totalRounds;
+
+  const handleContinue = useCallback(async () => {
+    if (isLastRound) {
+      await finishGame(gameId, game);
+      navigate(`/${code}/final`, { replace: true });
+    } else {
+      // Collect used phrases for phrase exclusion
+      const roundsRef = collection(db, "rounds");
+      const q = query(roundsRef, where("gameId", "==", gameId));
+      const snap = await getDocs(q);
+      const usedPhrases = snap.docs.map((d) => d.data().phrase as string);
+
+      await advanceRound(gameId, game, usedPhrases, roundNumber);
+      navigate(`/${code}/${roundNumber + 1}`, { replace: true });
+    }
+  }, [isLastRound, finishGame, advanceRound, gameId, game, code, roundNumber, navigate]);
 
   const allPlayers = Object.entries(game.players);
   const totalPlayers = allPlayers.length;
   const allFinished = results.length >= totalPlayers;
   const myResult = results.find((r) => r.playerUid === playerUid);
 
-  if (loading) {
+  if (loading || !roundId) {
     return (
       <div className="round-results">
         <p className="round-results__loading">Waiting for results...</p>
@@ -72,8 +100,6 @@ export const RoundResultsScreen = ({
     );
   }
 
-  // Build a unified list: all players, sorted by finished first (by score),
-  // then in-progress players (by progress %)
   const finishedUids = new Set(results.map((r) => r.playerUid));
 
   const playerEntries = allPlayers.map(([uid, player]) => {
@@ -89,7 +115,6 @@ export const RoundResultsScreen = ({
     };
   });
 
-  // Sort: finished players first (by score desc), then in-progress (by % desc)
   playerEntries.sort((a, b) => {
     if (a.finished && !b.finished) return -1;
     if (!a.finished && b.finished) return 1;
@@ -180,7 +205,7 @@ export const RoundResultsScreen = ({
         {allFinished && (
           <button
             className="round-results__continue"
-            onClick={onContinue}
+            onClick={handleContinue}
           >
             {isLastRound ? "See Final Results" : "Next Round"}
           </button>

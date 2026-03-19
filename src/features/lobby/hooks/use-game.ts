@@ -27,7 +27,7 @@ export const useGame = () => {
       displayName: string,
       totalRounds: number = 3,
       difficulty: Difficulty = "medium",
-    ): Promise<string> => {
+    ): Promise<{ gameId: string; code: string }> => {
       setLoading(true);
       setError(null);
       try {
@@ -55,7 +55,7 @@ export const useGame = () => {
 
         await setDoc(gameRef, game);
 
-        return gameRef.id;
+        return { gameId: gameRef.id, code };
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to create game";
@@ -162,6 +162,40 @@ export const useGame = () => {
       return onSnapshot(gameRef, (snapshot) => {
         if (snapshot.exists()) {
           callback({ id: snapshot.id, ...snapshot.data() } as Game);
+        }
+      });
+    },
+    [],
+  );
+
+  const lookupGameByCode = useCallback(
+    async (code: string): Promise<Game | null> => {
+      const gamesRef = collection(db, "games");
+      const q = query(
+        gamesRef,
+        where("code", "==", code.toUpperCase()),
+      );
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) return null;
+      const gameDoc = snapshot.docs[0];
+      return { id: gameDoc.id, ...gameDoc.data() } as Game;
+    },
+    [],
+  );
+
+  const subscribeToGameByCode = useCallback(
+    (code: string, callback: (game: Game | null) => void): Unsubscribe => {
+      const gamesRef = collection(db, "games");
+      const q = query(
+        gamesRef,
+        where("code", "==", code.toUpperCase()),
+      );
+      return onSnapshot(q, (snapshot) => {
+        if (snapshot.empty) {
+          callback(null);
+        } else {
+          const gameDoc = snapshot.docs[0];
+          callback({ id: gameDoc.id, ...gameDoc.data() } as Game);
         }
       });
     },
@@ -345,6 +379,8 @@ export const useGame = () => {
     advanceRound,
     finishGame,
     subscribeToGame,
+    lookupGameByCode,
+    subscribeToGameByCode,
     loading,
     error,
   };
