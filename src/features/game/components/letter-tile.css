@@ -66,8 +66,6 @@
 /* Responsive sizing */
 @media (max-width: 480px) {
   .letter-tile {
-    --card-width: 2.5rem;
-    --card-height: 3.25rem;
     font-size: var(--font-size-md);
   }
 }

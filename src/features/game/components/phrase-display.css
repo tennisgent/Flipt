@@ -1,12 +1,31 @@
 .phrase-display {
+  width: 100%;
+  padding: var(--space-lg);
+  overflow: hidden;
+}
+
+.phrase-display__inner {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-md);
-  padding: var(--space-lg);
+  transform-origin: top left;
 }
 
 .phrase-display__word {
   display: flex;
   gap: var(--card-gap);
+}
+
+@media (max-width: 480px) {
+  .phrase-display {
+    padding: var(--space-md) var(--space-sm);
+  }
+
+  .phrase-display__inner {
+    gap: var(--space-sm);
+    --card-width: 2.5rem;
+    --card-height: calc(2.5rem * 9 / 7);
+    --card-gap: 0.25rem;
+  }
 }

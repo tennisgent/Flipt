@@ -6,6 +6,12 @@
   padding: var(--space-lg);
 }
 
+@media (max-width: 480px) {
+  .game-board {
+    padding: var(--space-md);
+  }
+}
+
 .game-board__loading {
   display: flex;
   align-items: center;
