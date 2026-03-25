@@ -1,9 +1,10 @@
 .home-screen {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   min-height: 100dvh;
-  padding: var(--space-lg);
+  padding: var(--space-3xl) var(--space-lg) var(--space-lg);
+  gap: var(--space-2xl);
 }
 
 .home-screen__card {
@@ -136,4 +137,30 @@
   color: var(--color-danger);
   font-size: var(--font-size-sm);
   margin-top: var(--space-md);
+}
+
+/* Game list */
+.home-screen__games {
+  width: 100%;
+  max-width: 400px;
+}
+
+.home-screen__games-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-md);
+}
+
+.home-screen__games-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.home-screen__empty {
+  color: var(--color-text-dim);
+  font-size: var(--font-size-sm);
 }

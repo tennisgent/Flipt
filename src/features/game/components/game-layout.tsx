@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { Outlet, useParams, useNavigate, useOutletContext } from "react-router-dom";
+import { Outlet, useParams, useNavigate, useOutletContext, Link } from "react-router-dom";
 import { useAuthContext } from "../../auth/components/auth-provider";
 import { useGame } from "../../lobby/hooks/use-game";
 import { addGameSession } from "../../../shared/hooks/use-game-session";
 import type { Game } from "../../../lib/types";
+import "./game-layout.css";
 
 interface GameContext {
   game: Game;
@@ -72,5 +73,15 @@ export const GameLayout = () => {
     );
   }
 
-  return <Outlet context={{ game, gameId: game.id } satisfies GameContext} />;
+  return (
+    <>
+      <nav className="game-layout__nav">
+        <Link to="/" className="game-layout__home">
+          FLIPT
+        </Link>
+        <span className="game-layout__code">{game.code}</span>
+      </nav>
+      <Outlet context={{ game, gameId: game.id } satisfies GameContext} />
+    </>
+  );
 };

@@ -1,17 +1,23 @@
-import { useState, type FormEvent } from "react";
+import { useState, useCallback, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../auth/components/auth-provider";
 import { useGame } from "../hooks/use-game";
+import { useGameList } from "../hooks/use-game-list";
 import { parseGameCode } from "../../game/utils/game-code";
 import { addGameSession } from "../../../shared/hooks/use-game-session";
+import { GameCard } from "./game-card";
 import "./home-screen.css";
 
 export const HomeScreen = () => {
   const { user } = useAuthContext();
   const { createGame, loading, error } = useGame();
+  const { games, loading: gamesLoading } = useGameList();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"menu" | "join">("menu");
   const [joinCode, setJoinCode] = useState("");
+  const [removedCodes, setRemovedCodes] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const handleCreate = async () => {
     if (!user) return;
@@ -28,9 +34,14 @@ export const HomeScreen = () => {
     if (!user) return;
     const code = parseGameCode(joinCode);
     if (code.length < 4) return;
-    // Navigate to the game — GameLayout will handle auto-join
     navigate(`/${code}`);
   };
+
+  const handleRemove = useCallback((code: string) => {
+    setRemovedCodes((prev) => new Set(prev).add(code));
+  }, []);
+
+  const visibleGames = games.filter((g) => !removedCodes.has(g.code));
 
   return (
     <div className="home-screen">
@@ -92,6 +103,27 @@ export const HomeScreen = () => {
 
         {error && <p className="home-screen__error">{error}</p>}
       </div>
+
+      {visibleGames.length > 0 && (
+        <div className="home-screen__games">
+          <h2 className="home-screen__games-title">Your Games</h2>
+          <div className="home-screen__games-list">
+            {visibleGames.map((game) => (
+              <GameCard
+                key={game.code}
+                game={game}
+                onRemove={handleRemove}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!gamesLoading && visibleGames.length === 0 && games.length === 0 && (
+        <p className="home-screen__empty">
+          No games yet — create or join one!
+        </p>
+      )}
     </div>
   );
 };
