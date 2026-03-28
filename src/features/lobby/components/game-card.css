@@ -27,11 +27,19 @@
   gap: var(--space-sm);
 }
 
-.game-card__code {
-  font-family: var(--font-family-display);
+.game-card__name {
   font-weight: 700;
   font-size: var(--font-size-md);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-card__code {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-xs);
   letter-spacing: 0.08em;
+  color: var(--color-text-dim);
 }
 
 .game-card__status {

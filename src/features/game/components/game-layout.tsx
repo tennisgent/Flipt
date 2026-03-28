@@ -79,7 +79,9 @@ export const GameLayout = () => {
         <Link to="/" className="game-layout__home">
           FLIPT
         </Link>
-        <span className="game-layout__code">{game.code}</span>
+        <span className="game-layout__label">
+          {game.name || game.code}
+        </span>
       </nav>
       <Outlet context={{ game, gameId: game.id } satisfies GameContext} />
     </>

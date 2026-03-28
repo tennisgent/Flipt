@@ -27,6 +27,7 @@ export const useGame = () => {
       displayName: string,
       totalRounds: number = 3,
       difficulty: Difficulty = "medium",
+      gameName: string = "",
     ): Promise<{ gameId: string; code: string }> => {
       setLoading(true);
       setError(null);
@@ -43,6 +44,7 @@ export const useGame = () => {
 
         const game: Omit<Game, "id"> = {
           code,
+          name: gameName,
           hostUid,
           status: "waiting",
           difficulty,

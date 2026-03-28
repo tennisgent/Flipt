@@ -98,10 +98,20 @@
   transform: translateY(0);
 }
 
+.home-screen__create-form,
 .home-screen__join-form {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+}
+
+.home-screen__create-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.home-screen__create-actions .home-screen__button {
+  flex: 1;
 }
 
 .home-screen__input {

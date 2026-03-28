@@ -13,17 +13,22 @@ export const HomeScreen = () => {
   const { createGame, loading, error } = useGame();
   const { games, loading: gamesLoading } = useGameList();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"menu" | "join">("menu");
+  const [mode, setMode] = useState<"menu" | "join" | "create">("menu");
   const [joinCode, setJoinCode] = useState("");
+  const [gameName, setGameName] = useState("");
   const [removedCodes, setRemovedCodes] = useState<Set<string>>(
     () => new Set(),
   );
 
-  const handleCreate = async () => {
+  const handleCreate = async (e: FormEvent) => {
+    e.preventDefault();
     if (!user) return;
     const { code } = await createGame(
       user.uid,
       user.displayName || "Player",
+      3,
+      "medium",
+      gameName.trim(),
     );
     addGameSession(code);
     navigate(`/${code}`);
@@ -55,7 +60,7 @@ export const HomeScreen = () => {
           <div className="home-screen__actions">
             <button
               className="home-screen__button home-screen__button--primary"
-              onClick={handleCreate}
+              onClick={() => setMode("create")}
               disabled={loading}
             >
               Create Game
@@ -68,6 +73,40 @@ export const HomeScreen = () => {
               Join Game
             </button>
           </div>
+        )}
+
+        {mode === "create" && (
+          <form className="home-screen__create-form" onSubmit={handleCreate}>
+            <input
+              className="home-screen__input"
+              type="text"
+              placeholder="Game name (optional)"
+              value={gameName}
+              onChange={(e) => setGameName(e.target.value)}
+              maxLength={30}
+              autoFocus
+              disabled={loading}
+            />
+            <div className="home-screen__create-actions">
+              <button
+                className="home-screen__button home-screen__button--primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? "Creating..." : "Create"}
+              </button>
+              <button
+                className="home-screen__button home-screen__button--ghost"
+                type="button"
+                onClick={() => {
+                  setMode("menu");
+                  setGameName("");
+                }}
+              >
+                Back
+              </button>
+            </div>
+          </form>
         )}
 
         {mode === "join" && (

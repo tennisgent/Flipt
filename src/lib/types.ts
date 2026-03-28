@@ -16,6 +16,7 @@ export type Difficulty = "easy" | "medium" | "hard" | "ramping";
 export interface Game {
   id: string;
   code: string;
+  name: string;
   hostUid: string;
   status: GameStatus;
   difficulty: Difficulty;

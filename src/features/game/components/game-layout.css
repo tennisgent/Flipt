@@ -19,9 +19,14 @@
   color: var(--color-primary-light);
 }
 
-.game-layout__code {
+.game-layout__label {
   font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-text-dim);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+  text-align: right;
 }

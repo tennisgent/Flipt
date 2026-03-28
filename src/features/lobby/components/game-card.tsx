@@ -25,12 +25,15 @@ export const GameCard = ({ game, onRemove }: GameCardProps) => {
   return (
     <div className="game-card" role="button" tabIndex={0} onClick={handleClick}>
       <div className="game-card__header">
-        <span className="game-card__code">{game.code}</span>
+        <span className="game-card__name">
+          {game.name || game.code}
+        </span>
         <span className={`game-card__status game-card__status--${game.status}`}>
           {game.status}
         </span>
       </div>
       <div className="game-card__details">
+        {game.name && <span className="game-card__code">{game.code}</span>}
         <span className="game-card__players">
           {playerCount} player{playerCount !== 1 ? "s" : ""}
         </span>
