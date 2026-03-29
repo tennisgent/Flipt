@@ -71,6 +71,7 @@ vi.mock("../utils/scoring", () => ({
     }
     return letters;
   },
+  calculateTimeBonus: () => 20,
 }));
 
 vi.mock("../../../shared/hooks/use-game-session", () => ({
@@ -121,6 +122,7 @@ const defaultHookReturn = {
   score: 0,
   completed: false,
   loading: false,
+  getElapsed: vi.fn().mockReturnValue(0),
   guessLetter: vi.fn(),
   attemptSolve: vi.fn(),
   revealHint: vi.fn(),

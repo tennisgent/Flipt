@@ -78,6 +78,11 @@
   color: var(--color-bg);
 }
 
+.round-results__badge--speed {
+  background: var(--color-primary);
+  color: white;
+}
+
 .round-results__list {
   text-align: left;
   margin-bottom: var(--space-xl);

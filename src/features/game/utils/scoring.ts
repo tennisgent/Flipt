@@ -5,6 +5,10 @@ const SOLVE_BONUS = 10;
 const NO_HINT_BONUS = 5;
 const MAX_GUESSES_FOR_EFFICIENCY = 26;
 
+const TIME_BONUS_MAX = 20;
+const TIME_BONUS_GRACE_SECONDS = 30;
+const TIME_BONUS_DEADLINE_SECONDS = 120;
+
 interface ScoreInput {
   phrase: string;
   guessedLetters: string[];
@@ -12,6 +16,7 @@ interface ScoreInput {
   solveAttempts: string[];
   solved: boolean;
   usedHint: boolean;
+  elapsedSeconds?: number;
 }
 
 export const countLetterOccurrences = (
@@ -71,7 +76,21 @@ export const calculateScore = (input: ScoreInput): number => {
   );
   score += efficiencyBonus;
 
+  // Time bonus: up to +20 for solving quickly
+  if (input.elapsedSeconds !== undefined) {
+    score += calculateTimeBonus(input.elapsedSeconds);
+  }
+
   return score;
+};
+
+export const calculateTimeBonus = (elapsedSeconds: number): number => {
+  if (elapsedSeconds <= TIME_BONUS_GRACE_SECONDS) return TIME_BONUS_MAX;
+  if (elapsedSeconds >= TIME_BONUS_DEADLINE_SECONDS) return 0;
+  const decay =
+    (elapsedSeconds - TIME_BONUS_GRACE_SECONDS) /
+    (TIME_BONUS_DEADLINE_SECONDS - TIME_BONUS_GRACE_SECONDS);
+  return Math.round(TIME_BONUS_MAX * (1 - decay));
 };
 
 export const isLetterInPhrase = (phrase: string, letter: string): boolean => {

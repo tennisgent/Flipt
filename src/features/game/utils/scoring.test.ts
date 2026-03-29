@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   calculateScore,
+  calculateTimeBonus,
   countLetterOccurrences,
   getUniqueLetters,
   isLetterInPhrase,
@@ -46,6 +47,34 @@ describe("isLetterInPhrase", () => {
 
   it("returns false for letters not in the phrase", () => {
     expect(isLetterInPhrase("HELLO", "z")).toBe(false);
+  });
+});
+
+describe("calculateTimeBonus", () => {
+  it("returns full 20 points within grace period (0-30s)", () => {
+    expect(calculateTimeBonus(0)).toBe(20);
+    expect(calculateTimeBonus(15)).toBe(20);
+    expect(calculateTimeBonus(30)).toBe(20);
+  });
+
+  it("returns 0 at or after deadline (120s+)", () => {
+    expect(calculateTimeBonus(120)).toBe(0);
+    expect(calculateTimeBonus(150)).toBe(0);
+    expect(calculateTimeBonus(300)).toBe(0);
+  });
+
+  it("decays linearly between 30s and 120s", () => {
+    // Midpoint: 75s → halfway through 90s decay window → ~10
+    expect(calculateTimeBonus(75)).toBe(10);
+    // Quarter: 52.5s → 25% through → ~15
+    expect(calculateTimeBonus(52.5)).toBe(15);
+    // Three-quarter: 97.5s → 75% through → ~5
+    expect(calculateTimeBonus(97.5)).toBe(5);
+  });
+
+  it("rounds to nearest integer", () => {
+    // 40s = 10/90 through decay → 20 * (1 - 10/90) ≈ 17.78 → 18
+    expect(calculateTimeBonus(40)).toBe(18);
   });
 });
 
@@ -158,5 +187,44 @@ describe("calculateScore", () => {
     // c(1) + a(1) + t(1) = 3
     // solve: 10, no hint: 5, efficiency: 26-3 = 23
     expect(score).toBe(41);
+  });
+
+  it("includes time bonus when elapsedSeconds is provided", () => {
+    const withoutTime = calculateScore({
+      ...baseInput,
+      solved: true,
+    });
+    const withTime = calculateScore({
+      ...baseInput,
+      solved: true,
+      elapsedSeconds: 10, // within grace period → +20
+    });
+    expect(withTime - withoutTime).toBe(20);
+  });
+
+  it("gives no time bonus when elapsed exceeds deadline", () => {
+    const withoutTime = calculateScore({
+      ...baseInput,
+      solved: true,
+    });
+    const withTime = calculateScore({
+      ...baseInput,
+      solved: true,
+      elapsedSeconds: 150,
+    });
+    expect(withTime).toBe(withoutTime);
+  });
+
+  it("omits time bonus when elapsedSeconds is undefined", () => {
+    const score = calculateScore({
+      ...baseInput,
+      solved: true,
+    });
+    const scoreExplicit = calculateScore({
+      ...baseInput,
+      solved: true,
+      elapsedSeconds: undefined,
+    });
+    expect(score).toBe(scoreExplicit);
   });
 });

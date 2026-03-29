@@ -1,10 +1,10 @@
-import { useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../auth/components/auth-provider";
 import { useGameContext } from "./game-layout";
 import { useRound } from "../hooks/use-round";
 import { useRoundProgress } from "../hooks/use-round-progress";
-import { getUniqueLetters } from "../utils/scoring";
+import { getUniqueLetters, calculateTimeBonus } from "../utils/scoring";
 import {
   isRoundAvailable,
   getDayForRound,
@@ -32,12 +32,23 @@ export const GameBoard = () => {
     showHint,
     completed,
     loading,
+    getElapsed,
     guessLetter,
     attemptSolve,
     revealHint,
     submitResult,
     giveUp,
   } = useRound(gameId, user?.uid || "", roundNumber);
+
+  // Live time bonus display — ticks every second while playing
+  const [timeBonus, setTimeBonus] = useState(20);
+  useEffect(() => {
+    if (solved || completed || !round) return;
+    const tick = () => setTimeBonus(calculateTimeBonus(getElapsed()));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [solved, completed, round, getElapsed]);
 
   const { otherProgress, writeProgress, flushProgress } = useRoundProgress(
     round?.id ?? null,
@@ -151,6 +162,13 @@ export const GameBoard = () => {
             : `Round ${roundNumber}`}
         </span>
         <div className="game-board__stats">
+          {!solved && !completed && (
+            <span
+              className={`game-board__stat game-board__stat--time${timeBonus === 0 ? " game-board__stat--time-zero" : ""}`}
+            >
+              +{timeBonus} speed
+            </span>
+          )}
           <span className="game-board__stat">
             {wrongLetters.length} miss{wrongLetters.length !== 1 ? "es" : ""}
           </span>

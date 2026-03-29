@@ -50,6 +50,17 @@
   border-radius: var(--radius-full);
 }
 
+.game-board__stat--time {
+  color: var(--color-accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-board__stat--time-zero {
+  color: var(--color-text-dim);
+  font-weight: 400;
+}
+
 .game-board__progress {
   display: flex;
   flex-direction: column;

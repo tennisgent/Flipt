@@ -58,6 +58,8 @@ export interface RoundResult {
   solved: boolean;
   usedHint: boolean;
   score: number;
+  elapsedSeconds?: number;
+  timeBonus?: number;
   completedAt: Timestamp;
 }
 

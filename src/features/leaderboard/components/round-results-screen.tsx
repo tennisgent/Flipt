@@ -176,6 +176,11 @@ export const RoundResultsScreen = () => {
                   No Hint
                 </span>
               )}
+              {(myResult.timeBonus ?? 0) > 0 && (
+                <span className="round-results__badge round-results__badge--speed">
+                  +{myResult.timeBonus} Speed
+                </span>
+              )}
             </div>
           </div>
         )}

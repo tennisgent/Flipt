@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   collection,
   doc,
@@ -10,7 +10,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
-import { calculateScore, getUniqueLetters, isLetterInPhrase } from "../utils/scoring";
+import { calculateScore, calculateTimeBonus, getUniqueLetters, isLetterInPhrase } from "../utils/scoring";
 import { playSound } from "../utils/sound";
 import type { Round, RoundResult } from "../../../lib/types";
 
@@ -41,6 +41,14 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
     completed: false,
   });
   const [loading, setLoading] = useState(true);
+
+  // Track elapsed time from when the round first loads
+  const startTimeRef = useRef<number | null>(null);
+
+  const getElapsed = useCallback((): number => {
+    if (!startTimeRef.current) return 0;
+    return Math.round((Date.now() - startTimeRef.current) / 1000);
+  }, []);
 
   // Subscribe to current round
   useEffect(() => {
@@ -77,6 +85,7 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
           // If the round changed, reset all local game state to prevent
           // stale guesses from a previous round bleeding through
           if (prev.round?.id !== round.id) {
+            startTimeRef.current = Date.now();
             return {
               round,
               guessedLetters: [],
@@ -205,6 +214,9 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
     // When solved by guessing every letter, don't award the +10 solve bonus
     const solvedForScoring = state.solved && !state.solvedByGuessing;
 
+    const elapsedSeconds = getElapsed();
+    const timeBonus = calculateTimeBonus(elapsedSeconds);
+
     const score = calculateScore({
       phrase: state.round.phrase,
       guessedLetters: state.guessedLetters,
@@ -212,6 +224,7 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
       solveAttempts: state.solveAttempts,
       solved: solvedForScoring,
       usedHint: state.usedHint,
+      elapsedSeconds,
     });
 
     const resultRef = doc(collection(db, "round-results"));
@@ -225,6 +238,8 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
       solved: state.solved,
       usedHint: state.usedHint,
       score,
+      elapsedSeconds,
+      timeBonus,
       completedAt: serverTimestamp() as RoundResult["completedAt"],
     };
 
@@ -241,6 +256,7 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
     state.solved,
     state.solvedByGuessing,
     state.usedHint,
+    getElapsed,
     gameId,
     playerUid,
   ]);
@@ -248,7 +264,9 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
   const giveUp = useCallback(async () => {
     if (!state.round || state.completed) return;
 
-    // Submit with current state, not solved
+    const elapsedSeconds = getElapsed();
+
+    // Submit with current state, not solved — no time bonus for giving up
     const score = calculateScore({
       phrase: state.round.phrase,
       guessedLetters: state.guessedLetters,
@@ -269,6 +287,8 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
       solved: false,
       usedHint: state.usedHint,
       score,
+      elapsedSeconds,
+      timeBonus: 0,
       completedAt: serverTimestamp() as RoundResult["completedAt"],
     };
 
@@ -283,6 +303,7 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
     state.wrongLetters,
     state.solveAttempts,
     state.usedHint,
+    getElapsed,
     gameId,
     playerUid,
   ]);
@@ -290,6 +311,7 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
   return {
     ...state,
     loading,
+    getElapsed,
     guessLetter,
     attemptSolve,
     revealHint,
