@@ -7,8 +7,44 @@ import { useGame } from "../../lobby/hooks/use-game";
 import {
   getNextUnlockTime,
   formatCountdown,
+  getTotalDays,
 } from "../../../shared/utils/daily-helpers";
+import type { DailyRoundInfo } from "../hooks/use-daily-rounds";
 import "./daily-round-list.css";
+
+interface DayGroup {
+  dayNumber: number;
+  rounds: DailyRoundInfo[];
+  available: boolean;
+  allPlayed: boolean;
+  somePlayed: boolean;
+  totalScore: number;
+}
+
+const groupByDay = (
+  rounds: DailyRoundInfo[],
+  roundsPerDay: number,
+): DayGroup[] => {
+  const totalDays = getTotalDays(rounds.length, roundsPerDay);
+  const groups: DayGroup[] = [];
+
+  for (let d = 1; d <= totalDays; d++) {
+    const dayRounds = rounds.filter(
+      (r) => (r.round.dayNumber ?? r.round.roundNumber) === d,
+    );
+    const played = dayRounds.filter((r) => r.result !== null);
+    groups.push({
+      dayNumber: d,
+      rounds: dayRounds,
+      available: dayRounds.length > 0 && dayRounds[0].available,
+      allPlayed: played.length === dayRounds.length && dayRounds.length > 0,
+      somePlayed: played.length > 0 && played.length < dayRounds.length,
+      totalScore: played.reduce((sum, r) => sum + (r.result?.score ?? 0), 0),
+    });
+  }
+
+  return groups;
+};
 
 export const DailyRoundList = () => {
   const { code } = useParams<{ code: string }>();
@@ -18,6 +54,8 @@ export const DailyRoundList = () => {
   const navigate = useNavigate();
   const { rounds, loading } = useDailyRounds(gameId, user?.uid ?? "");
   const [countdown, setCountdown] = useState("");
+
+  const roundsPerDay = game.roundsPerDay ?? 1;
 
   const nextUnlock = getNextUnlockTime(
     rounds.map((r) => r.round),
@@ -41,10 +79,28 @@ export const DailyRoundList = () => {
   const isHost = user?.uid === game.hostUid;
   const allDaysElapsed = !nextUnlock && rounds.length > 0;
   const players = Object.values(game.players);
+  const days = groupByDay(rounds, roundsPerDay);
+  const numDays = getTotalDays(game.totalRounds, roundsPerDay);
 
   const handleEndGame = async () => {
     await finishGame(gameId, game);
     navigate(`/${code}/final`, { replace: true });
+  };
+
+  const handleDayClick = (day: DayGroup) => {
+    if (roundsPerDay === 1) {
+      // Single round per day — go directly to game or results
+      const round = day.rounds[0];
+      if (!round) return;
+      if (day.allPlayed) {
+        navigate(`/${code}/${round.round.roundNumber}/results`);
+      } else {
+        navigate(`/${code}/${round.round.roundNumber}`);
+      }
+    } else {
+      // Multiple rounds per day — show day detail
+      navigate(`/${code}/day/${day.dayNumber}`);
+    }
   };
 
   if (loading) {
@@ -60,8 +116,10 @@ export const DailyRoundList = () => {
       <div className="daily-round-list__header">
         <h2 className="daily-round-list__title">Daily Challenge</h2>
         <p className="daily-round-list__subtitle">
-          {game.totalRounds} rounds &middot; {players.length} player
-          {players.length !== 1 && "s"}
+          {numDays} day{numDays !== 1 && "s"}
+          {roundsPerDay > 1 && ` · ${roundsPerDay} rounds/day`}
+          {" · "}
+          {players.length} player{players.length !== 1 && "s"}
         </p>
         <p className="daily-round-list__code">
           Share code: <strong>{code}</strong>
@@ -69,41 +127,48 @@ export const DailyRoundList = () => {
       </div>
 
       <div className="daily-round-list__rounds">
-        {rounds.map(({ round, result, available }) => {
-          const played = result !== null;
-          const locked = !available;
+        {days.map((day) => {
+          const locked = !day.available;
+
+          let statusText = "";
+          if (!locked) {
+            if (day.allPlayed) {
+              statusText = `${day.totalScore >= 0 ? "+" : ""}${day.totalScore} pts`;
+            } else if (day.somePlayed) {
+              const played = day.rounds.filter((r) => r.result !== null).length;
+              statusText = `${played}/${day.rounds.length} done`;
+            } else {
+              statusText = "Play";
+            }
+          }
 
           return (
             <button
-              key={round.id}
+              key={day.dayNumber}
               className={`daily-round-list__round ${
                 locked
                   ? "daily-round-list__round--locked"
-                  : played
+                  : day.allPlayed
                     ? "daily-round-list__round--completed"
                     : "daily-round-list__round--available"
               }`}
               disabled={locked}
-              onClick={() => {
-                if (played) {
-                  navigate(`/${code}/${round.roundNumber}/results`);
-                } else {
-                  navigate(`/${code}/${round.roundNumber}`);
-                }
-              }}
+              onClick={() => handleDayClick(day)}
             >
               <span className="daily-round-list__round-number">
-                Day {round.roundNumber}
+                Day {day.dayNumber}
               </span>
               <span className="daily-round-list__round-category">
-                {locked ? "Locked" : round.category}
+                {locked
+                  ? "Locked"
+                  : roundsPerDay === 1
+                    ? day.rounds[0]?.round.category ?? ""
+                    : day.somePlayed
+                      ? `${day.rounds.filter((r) => r.result !== null).length}/${day.rounds.length} rounds`
+                      : `${day.rounds.length} rounds`}
               </span>
               <span className="daily-round-list__round-status">
-                {locked
-                  ? ""
-                  : played
-                    ? `${result.score >= 0 ? "+" : ""}${result.score} pts`
-                    : "Play"}
+                {statusText}
               </span>
             </button>
           );

@@ -11,6 +11,7 @@ import { db } from "../../../lib/firebase";
 import { useAuthContext } from "../../auth/components/auth-provider";
 import { useGameContext } from "../../game/components/game-layout";
 import { useGame } from "../../lobby/hooks/use-game";
+import { getDayForRound } from "../../../shared/utils/daily-helpers";
 import { useRoundResults } from "../hooks/use-round-results";
 import "./round-results-screen.css";
 
@@ -79,7 +80,13 @@ export const RoundResultsScreen = () => {
       if (roundId) {
         await updatePlayerScoreForRound(gameId, roundId, playerUid);
       }
-      navigate(`/${code}`, { replace: true });
+      const rpd = game.roundsPerDay ?? 1;
+      if (rpd > 1) {
+        const day = getDayForRound(roundNumber, rpd);
+        navigate(`/${code}/day/${day}`, { replace: true });
+      } else {
+        navigate(`/${code}`, { replace: true });
+      }
       return;
     }
 
@@ -139,7 +146,16 @@ export const RoundResultsScreen = () => {
     <div className="round-results">
       <div className="round-results__card">
         <h2 className="round-results__title">
-          {isDaily ? `Day ${roundNumber}` : `Round ${roundNumber}`} Results
+          {isDaily
+            ? (() => {
+                const rpd = game.roundsPerDay ?? 1;
+                const day = getDayForRound(roundNumber, rpd);
+                return rpd > 1
+                  ? `Day ${day} · Rd ${((roundNumber - 1) % rpd) + 1}`
+                  : `Day ${day}`;
+              })()
+            : `Round ${roundNumber}`}{" "}
+          Results
         </h2>
 
         {myResult && (
@@ -218,7 +234,7 @@ export const RoundResultsScreen = () => {
             className="round-results__continue"
             onClick={handleContinue}
           >
-            Back to Rounds
+            {(game.roundsPerDay ?? 1) > 1 ? "Back to Day" : "Back to Rounds"}
           </button>
         )}
 

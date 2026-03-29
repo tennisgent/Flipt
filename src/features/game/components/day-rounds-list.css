@@ -1,0 +1,104 @@
+.day-rounds-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.day-rounds-list__loading {
+  color: var(--color-text-muted);
+  padding: var(--space-xl);
+}
+
+.day-rounds-list__header {
+  text-align: center;
+}
+
+.day-rounds-list__title {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-xl);
+  color: var(--color-text);
+  margin: 0 0 var(--space-xs);
+}
+
+.day-rounds-list__subtitle {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.day-rounds-list__rounds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.day-rounds-list__round {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-bg-card);
+  border: 2px solid transparent;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    opacity 0.15s;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+}
+
+.day-rounds-list__round:hover {
+  border-color: var(--color-primary);
+}
+
+.day-rounds-list__round--available {
+  border-color: var(--color-accent);
+}
+
+.day-rounds-list__round--completed {
+  opacity: 0.8;
+}
+
+.day-rounds-list__round-number {
+  font-weight: 700;
+  min-width: 4.5rem;
+  font-family: var(--font-family-display);
+}
+
+.day-rounds-list__round-category {
+  flex: 1;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.day-rounds-list__round-status {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--color-accent);
+}
+
+.day-rounds-list__back {
+  padding: var(--space-sm) var(--space-lg);
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-text-muted);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.day-rounds-list__back:hover {
+  color: var(--color-text);
+  border-color: var(--color-text);
+}

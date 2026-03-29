@@ -3,10 +3,13 @@ import { Timestamp } from "firebase/firestore";
 import {
   getGameDayStart,
   getAvailableDateForRound,
+  getAvailableDateForDay,
   getCurrentDayNumber,
   isRoundAvailable,
   getNextUnlockTime,
   formatCountdown,
+  getDayForRound,
+  getTotalDays,
 } from "./daily-helpers";
 
 describe("getGameDayStart", () => {
@@ -134,6 +137,61 @@ describe("getNextUnlockTime", () => {
     ];
     const result = getNextUnlockTime(rounds);
     expect(result?.getTime()).toBe(future1.getTime());
+  });
+});
+
+describe("getAvailableDateForDay", () => {
+  it("day 1 gets the base date", () => {
+    const base = new Date("2026-06-15T07:00:00Z");
+    const ts = getAvailableDateForDay(1, base);
+    expect(ts.toDate().getTime()).toBe(base.getTime());
+  });
+
+  it("day 3 gets base + 2 days", () => {
+    const base = new Date("2026-06-15T07:00:00Z");
+    const ts = getAvailableDateForDay(3, base);
+    const expected = new Date("2026-06-17T07:00:00Z");
+    expect(ts.toDate().getTime()).toBe(expected.getTime());
+  });
+});
+
+describe("getDayForRound", () => {
+  it("maps rounds to days with 1 round per day", () => {
+    expect(getDayForRound(1, 1)).toBe(1);
+    expect(getDayForRound(2, 1)).toBe(2);
+    expect(getDayForRound(5, 1)).toBe(5);
+  });
+
+  it("maps rounds to days with 2 rounds per day", () => {
+    expect(getDayForRound(1, 2)).toBe(1);
+    expect(getDayForRound(2, 2)).toBe(1);
+    expect(getDayForRound(3, 2)).toBe(2);
+    expect(getDayForRound(4, 2)).toBe(2);
+    expect(getDayForRound(5, 2)).toBe(3);
+  });
+
+  it("maps rounds to days with 3 rounds per day", () => {
+    expect(getDayForRound(1, 3)).toBe(1);
+    expect(getDayForRound(3, 3)).toBe(1);
+    expect(getDayForRound(4, 3)).toBe(2);
+    expect(getDayForRound(6, 3)).toBe(2);
+    expect(getDayForRound(7, 3)).toBe(3);
+  });
+});
+
+describe("getTotalDays", () => {
+  it("returns totalRounds when roundsPerDay is 1", () => {
+    expect(getTotalDays(7, 1)).toBe(7);
+  });
+
+  it("divides evenly for 2 rounds per day", () => {
+    expect(getTotalDays(6, 2)).toBe(3);
+    expect(getTotalDays(10, 2)).toBe(5);
+  });
+
+  it("rounds up for uneven division", () => {
+    expect(getTotalDays(7, 3)).toBe(3);
+    expect(getTotalDays(5, 2)).toBe(3);
   });
 });
 

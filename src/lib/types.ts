@@ -25,6 +25,7 @@ export interface Game {
   players: Record<string, GamePlayer>;
   currentRound: number;
   totalRounds: number;
+  roundsPerDay?: number;
   startDate?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -36,6 +37,7 @@ export interface Round {
   id: string;
   gameId: string;
   roundNumber: number;
+  dayNumber?: number;
   phrase: string;
   category: string;
   status: RoundStatus;

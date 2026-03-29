@@ -47,7 +47,13 @@ export const GameCard = ({ game, onRemove }: GameCardProps) => {
         {game.status !== "waiting" && (
           <span className="game-card__round">
             {game.type === "daily"
-              ? `${game.totalRounds} days`
+              ? (() => {
+                  const rpd = game.roundsPerDay ?? 1;
+                  const days = Math.ceil(game.totalRounds / rpd);
+                  return rpd > 1
+                    ? `${days} days · ${rpd}/day`
+                    : `${days} days`;
+                })()
               : `Round ${game.currentRound} of ${game.totalRounds}`}
           </span>
         )}

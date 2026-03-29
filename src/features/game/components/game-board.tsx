@@ -5,7 +5,10 @@ import { useGameContext } from "./game-layout";
 import { useRound } from "../hooks/use-round";
 import { useRoundProgress } from "../hooks/use-round-progress";
 import { getUniqueLetters } from "../utils/scoring";
-import { isRoundAvailable } from "../../../shared/utils/daily-helpers";
+import {
+  isRoundAvailable,
+  getDayForRound,
+} from "../../../shared/utils/daily-helpers";
 import { removeGameSession } from "../../../shared/hooks/use-game-session";
 import { PhraseDisplay } from "./phrase-display";
 import { Keyboard } from "./keyboard";
@@ -137,7 +140,15 @@ export const GameBoard = () => {
     <div className="game-board">
       <div className="game-board__header">
         <span className="game-board__round">
-          {game.type === "daily" ? `Day ${roundNumber}` : `Round ${roundNumber}`}
+          {game.type === "daily"
+            ? (() => {
+                const rpd = game.roundsPerDay ?? 1;
+                const day = getDayForRound(roundNumber, rpd);
+                return rpd > 1
+                  ? `Day ${day} · Rd ${((roundNumber - 1) % rpd) + 1}`
+                  : `Day ${day}`;
+              })()
+            : `Round ${roundNumber}`}
         </span>
         <div className="game-board__stats">
           <span className="game-board__stat">

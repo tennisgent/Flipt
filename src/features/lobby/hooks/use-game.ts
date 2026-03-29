@@ -19,7 +19,7 @@ import { generateGameCode } from "../../game/utils/game-code";
 import { getRandomPhrase } from "../../game/utils/phrases";
 import {
   getGameDayStart,
-  getAvailableDateForRound,
+  getAvailableDateForDay,
 } from "../../../shared/utils/daily-helpers";
 import type { Difficulty, Game, GamePlayer } from "../../../lib/types";
 
@@ -81,6 +81,7 @@ export const useGame = () => {
       hostUid: string,
       displayName: string,
       totalDays: number,
+      roundsPerDay: number,
       difficulty: Difficulty,
       gameName: string = "",
     ): Promise<{ gameId: string; code: string }> => {
@@ -90,6 +91,7 @@ export const useGame = () => {
         const code = generateGameCode();
         const gameRef = doc(collection(db, "games"));
         const startDate = getGameDayStart(new Date());
+        const totalRounds = totalDays * roundsPerDay;
 
         const hostPlayer: GamePlayer = {
           uid: hostUid,
@@ -101,12 +103,12 @@ export const useGame = () => {
         // Fetch all phrases upfront
         const usedPhrases: string[] = [];
         const phrases: Array<{ text: string; category: string }> = [];
-        for (let i = 1; i <= totalDays; i++) {
+        for (let i = 1; i <= totalRounds; i++) {
           const phrase = await getRandomPhrase(
             usedPhrases,
             difficulty,
             i,
-            totalDays,
+            totalRounds,
           );
           usedPhrases.push(phrase.text);
           phrases.push(phrase);
@@ -124,21 +126,24 @@ export const useGame = () => {
           difficulty,
           players: { [hostUid]: hostPlayer },
           currentRound: 1,
-          totalRounds: totalDays,
+          totalRounds,
+          roundsPerDay,
           startDate: Timestamp.fromDate(startDate),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
 
-        for (let i = 0; i < totalDays; i++) {
+        for (let i = 0; i < totalRounds; i++) {
+          const dayNumber = Math.floor(i / roundsPerDay) + 1;
           const roundRef = doc(collection(db, "rounds"));
           batch.set(roundRef, {
             gameId: gameRef.id,
             roundNumber: i + 1,
+            dayNumber,
             phrase: phrases[i].text,
             category: phrases[i].category,
             status: "active",
-            availableDate: getAvailableDateForRound(i + 1, startDate),
+            availableDate: getAvailableDateForDay(dayNumber, startDate),
             createdAt: serverTimestamp(),
           });
         }

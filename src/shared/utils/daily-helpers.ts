@@ -87,6 +87,35 @@ export const getAvailableDateForRound = (
 };
 
 /**
+ * Returns the Firestore Timestamp for when a given day becomes available.
+ * Day 1 = baseDate, Day 2 = baseDate + 1 day, etc.
+ */
+export const getAvailableDateForDay = (
+  dayNumber: number,
+  baseDate: Date,
+): Timestamp => {
+  const ms = baseDate.getTime() + (dayNumber - 1) * 24 * 60 * 60 * 1000;
+  return Timestamp.fromDate(new Date(ms));
+};
+
+/**
+ * Returns which day a round belongs to given roundsPerDay.
+ * E.g. with roundsPerDay=2: rounds 1-2 → day 1, rounds 3-4 → day 2.
+ */
+export const getDayForRound = (
+  roundNumber: number,
+  roundsPerDay: number,
+): number => Math.ceil(roundNumber / roundsPerDay);
+
+/**
+ * Returns the total number of days for a game.
+ */
+export const getTotalDays = (
+  totalRounds: number,
+  roundsPerDay: number,
+): number => Math.ceil(totalRounds / roundsPerDay);
+
+/**
  * Returns the 1-based day number relative to the game's start date.
  */
 export const getCurrentDayNumber = (startDate: Timestamp): number => {

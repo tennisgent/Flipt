@@ -19,6 +19,7 @@ export const HomeScreen = () => {
   const [gameName, setGameName] = useState("");
   const [gameType, setGameType] = useState<GameType>("classic");
   const [dailyDays, setDailyDays] = useState(7);
+  const [dailyRoundsPerDay, setDailyRoundsPerDay] = useState(1);
   const [dailyDifficulty, setDailyDifficulty] = useState<Difficulty>("medium");
   const [removedCodes, setRemovedCodes] = useState<Set<string>>(
     () => new Set(),
@@ -33,6 +34,7 @@ export const HomeScreen = () => {
         user.uid,
         user.displayName || "Player",
         dailyDays,
+        dailyRoundsPerDay,
         dailyDifficulty,
         gameName.trim(),
       );
@@ -135,6 +137,23 @@ export const HomeScreen = () => {
                     {[3, 5, 7, 10, 14].map((n) => (
                       <option key={n} value={n}>
                         {n} days
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="home-screen__label">
+                  Rounds/Day
+                  <select
+                    className="home-screen__select"
+                    value={dailyRoundsPerDay}
+                    onChange={(e) =>
+                      setDailyRoundsPerDay(Number(e.target.value))
+                    }
+                    disabled={loading}
+                  >
+                    {[1, 2, 3].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
                       </option>
                     ))}
                   </select>
