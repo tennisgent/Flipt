@@ -42,6 +42,26 @@
   color: var(--color-text-dim);
 }
 
+.game-card__badges {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.game-card__badge {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-full);
+}
+
+.game-card__badge--daily {
+  background: rgba(253, 203, 110, 0.2);
+  color: var(--color-accent);
+}
+
 .game-card__status {
   font-size: var(--font-size-xs);
   font-weight: 600;

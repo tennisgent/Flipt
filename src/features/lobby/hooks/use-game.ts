@@ -10,11 +10,17 @@ import {
   updateDoc,
   serverTimestamp,
   onSnapshot,
+  writeBatch,
+  Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
 import { generateGameCode } from "../../game/utils/game-code";
 import { getRandomPhrase } from "../../game/utils/phrases";
+import {
+  getGameDayStart,
+  getAvailableDateForRound,
+} from "../../../shared/utils/daily-helpers";
 import type { Difficulty, Game, GamePlayer } from "../../../lib/types";
 
 export const useGame = () => {
@@ -70,6 +76,130 @@ export const useGame = () => {
     [],
   );
 
+  const createDailyGame = useCallback(
+    async (
+      hostUid: string,
+      displayName: string,
+      totalDays: number,
+      difficulty: Difficulty,
+      gameName: string = "",
+    ): Promise<{ gameId: string; code: string }> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const code = generateGameCode();
+        const gameRef = doc(collection(db, "games"));
+        const startDate = getGameDayStart(new Date());
+
+        const hostPlayer: GamePlayer = {
+          uid: hostUid,
+          displayName,
+          totalScore: 0,
+          roundsCompleted: 0,
+        };
+
+        // Fetch all phrases upfront
+        const usedPhrases: string[] = [];
+        const phrases: Array<{ text: string; category: string }> = [];
+        for (let i = 1; i <= totalDays; i++) {
+          const phrase = await getRandomPhrase(
+            usedPhrases,
+            difficulty,
+            i,
+            totalDays,
+          );
+          usedPhrases.push(phrase.text);
+          phrases.push(phrase);
+        }
+
+        // Batch write game + all rounds
+        const batch = writeBatch(db);
+
+        batch.set(gameRef, {
+          code,
+          name: gameName,
+          hostUid,
+          status: "active",
+          type: "daily",
+          difficulty,
+          players: { [hostUid]: hostPlayer },
+          currentRound: 1,
+          totalRounds: totalDays,
+          startDate: Timestamp.fromDate(startDate),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+
+        for (let i = 0; i < totalDays; i++) {
+          const roundRef = doc(collection(db, "rounds"));
+          batch.set(roundRef, {
+            gameId: gameRef.id,
+            roundNumber: i + 1,
+            phrase: phrases[i].text,
+            category: phrases[i].category,
+            status: "active",
+            availableDate: getAvailableDateForRound(i + 1, startDate),
+            createdAt: serverTimestamp(),
+          });
+        }
+
+        await batch.commit();
+        return { gameId: gameRef.id, code };
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to create daily game";
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  const updatePlayerScoreForRound = useCallback(
+    async (
+      gameId: string,
+      roundId: string,
+      playerUid: string,
+    ): Promise<void> => {
+      const gameRef = doc(db, "games", gameId);
+      const freshSnap = await getDoc(gameRef);
+      const freshGame = freshSnap.data() as Omit<Game, "id"> | undefined;
+      if (!freshGame) return;
+
+      const player = freshGame.players[playerUid];
+      if (!player) return;
+
+      // Find this player's result for this round
+      const resultsRef = collection(db, "round-results");
+      const resultsQuery = query(
+        resultsRef,
+        where("roundId", "==", roundId),
+        where("playerUid", "==", playerUid),
+      );
+      const resultsSnap = await getDocs(resultsQuery);
+      if (resultsSnap.empty) return;
+
+      const result = resultsSnap.docs[0].data();
+      const roundNumber = result.roundNumber as number | undefined;
+
+      // Idempotent: only update if this round hasn't been counted yet
+      if (player.roundsCompleted >= (roundNumber ?? player.roundsCompleted + 1)) {
+        return;
+      }
+
+      await updateDoc(gameRef, {
+        [`players.${playerUid}.totalScore`]:
+          player.totalScore + (result.score as number),
+        [`players.${playerUid}.roundsCompleted`]:
+          player.roundsCompleted + 1,
+        updatedAt: serverTimestamp(),
+      });
+    },
+    [],
+  );
+
   const joinGame = useCallback(
     async (
       code: string,
@@ -83,7 +213,6 @@ export const useGame = () => {
         const q = query(
           gamesRef,
           where("code", "==", code.toUpperCase()),
-          where("status", "==", "waiting"),
         );
         const snapshot = await getDocs(q);
 
@@ -93,6 +222,15 @@ export const useGame = () => {
 
         const gameDoc = snapshot.docs[0];
         const gameData = gameDoc.data() as Omit<Game, "id">;
+
+        // Allow joining if waiting, or if it's an active daily game
+        const canJoin =
+          gameData.status === "waiting" ||
+          (gameData.status === "active" && gameData.type === "daily");
+
+        if (!canJoin) {
+          throw new Error("Game not found. Check the code and try again.");
+        }
 
         if (gameData.players[playerUid]) {
           return gameDoc.id;
@@ -376,10 +514,12 @@ export const useGame = () => {
 
   return {
     createGame,
+    createDailyGame,
     joinGame,
     startGame,
     advanceRound,
     finishGame,
+    updatePlayerScoreForRound,
     subscribeToGame,
     lookupGameByCode,
     subscribeToGameByCode,

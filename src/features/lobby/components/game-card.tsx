@@ -28,9 +28,16 @@ export const GameCard = ({ game, onRemove }: GameCardProps) => {
         <span className="game-card__name">
           {game.name || game.code}
         </span>
-        <span className={`game-card__status game-card__status--${game.status}`}>
-          {game.status}
-        </span>
+        <div className="game-card__badges">
+          {game.type === "daily" && (
+            <span className="game-card__badge game-card__badge--daily">
+              Daily
+            </span>
+          )}
+          <span className={`game-card__status game-card__status--${game.status}`}>
+            {game.status}
+          </span>
+        </div>
       </div>
       <div className="game-card__details">
         {game.name && <span className="game-card__code">{game.code}</span>}
@@ -39,7 +46,9 @@ export const GameCard = ({ game, onRemove }: GameCardProps) => {
         </span>
         {game.status !== "waiting" && (
           <span className="game-card__round">
-            Round {game.currentRound} of {game.totalRounds}
+            {game.type === "daily"
+              ? `${game.totalRounds} days`
+              : `Round ${game.currentRound} of ${game.totalRounds}`}
           </span>
         )}
       </div>

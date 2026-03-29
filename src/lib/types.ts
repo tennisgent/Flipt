@@ -12,6 +12,7 @@ export interface GamePlayer extends Player {
 }
 
 export type Difficulty = "easy" | "medium" | "hard" | "ramping";
+export type GameType = "classic" | "daily";
 
 export interface Game {
   id: string;
@@ -19,10 +20,12 @@ export interface Game {
   name: string;
   hostUid: string;
   status: GameStatus;
+  type?: GameType;
   difficulty: Difficulty;
   players: Record<string, GamePlayer>;
   currentRound: number;
   totalRounds: number;
+  startDate?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -36,6 +39,7 @@ export interface Round {
   phrase: string;
   category: string;
   status: RoundStatus;
+  availableDate?: Timestamp;
   createdAt: Timestamp;
 }
 

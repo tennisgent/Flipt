@@ -5,6 +5,7 @@ import { useGameContext } from "./game-layout";
 import { useRound } from "../hooks/use-round";
 import { useRoundProgress } from "../hooks/use-round-progress";
 import { getUniqueLetters } from "../utils/scoring";
+import { isRoundAvailable } from "../../../shared/utils/daily-helpers";
 import { removeGameSession } from "../../../shared/hooks/use-game-session";
 import { PhraseDisplay } from "./phrase-display";
 import { Keyboard } from "./keyboard";
@@ -97,6 +98,17 @@ export const GameBoard = () => {
     }
   }, [completed, round, navigateToResults]);
 
+  // Guard: redirect if this is a locked daily round
+  useEffect(() => {
+    if (
+      round &&
+      game.type === "daily" &&
+      !isRoundAvailable(round.availableDate)
+    ) {
+      navigate(`/${code}`, { replace: true });
+    }
+  }, [round, game.type, code, navigate]);
+
   const handleGiveUp = useCallback(async () => {
     if (!round) return;
     await giveUp();
@@ -124,7 +136,9 @@ export const GameBoard = () => {
   return (
     <div className="game-board">
       <div className="game-board__header">
-        <span className="game-board__round">Round {roundNumber}</span>
+        <span className="game-board__round">
+          {game.type === "daily" ? `Day ${roundNumber}` : `Round ${roundNumber}`}
+        </span>
         <div className="game-board__stats">
           <span className="game-board__stat">
             {wrongLetters.length} miss{wrongLetters.length !== 1 ? "es" : ""}

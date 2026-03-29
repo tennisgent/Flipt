@@ -45,11 +45,20 @@ export const useRound = (gameId: string, playerUid: string, roundNumber?: number
   // Subscribe to current round
   useEffect(() => {
     const roundsRef = collection(db, "rounds");
-    const q = query(
-      roundsRef,
-      where("gameId", "==", gameId),
-      where("status", "==", "active"),
-    );
+    // When roundNumber is known, query directly by it (needed for daily
+    // games where multiple rounds are "active" simultaneously).
+    const q =
+      roundNumber !== undefined
+        ? query(
+            roundsRef,
+            where("gameId", "==", gameId),
+            where("roundNumber", "==", roundNumber),
+          )
+        : query(
+            roundsRef,
+            where("gameId", "==", gameId),
+            where("status", "==", "active"),
+          );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {

@@ -18,6 +18,14 @@
       ]
     },
     {
+      "collectionGroup": "rounds",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gameId", "order": "ASCENDING" },
+        { "fieldPath": "roundNumber", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "phrases",
       "queryScope": "COLLECTION",
       "fields": [

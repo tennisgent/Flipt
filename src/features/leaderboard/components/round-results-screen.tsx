@@ -24,7 +24,7 @@ export const RoundResultsScreen = () => {
   const roundNumber = Number(roundNum);
   const { game, gameId } = useGameContext();
   const { user } = useAuthContext();
-  const { advanceRound, finishGame } = useGame();
+  const { advanceRound, finishGame, updatePlayerScoreForRound } = useGame();
   const navigate = useNavigate();
   const playerUid = user?.uid || "";
 
@@ -71,7 +71,18 @@ export const RoundResultsScreen = () => {
 
   const isLastRound = roundNumber >= game.totalRounds;
 
+  const isDaily = game.type === "daily";
+
   const handleContinue = useCallback(async () => {
+    if (isDaily) {
+      // Daily games: update player score incrementally, go back to round list
+      if (roundId) {
+        await updatePlayerScoreForRound(gameId, roundId, playerUid);
+      }
+      navigate(`/${code}`, { replace: true });
+      return;
+    }
+
     if (isLastRound) {
       await finishGame(gameId, game);
       navigate(`/${code}/final`, { replace: true });
@@ -85,7 +96,7 @@ export const RoundResultsScreen = () => {
       await advanceRound(gameId, game, usedPhrases, roundNumber);
       navigate(`/${code}/${roundNumber + 1}`, { replace: true });
     }
-  }, [isLastRound, finishGame, advanceRound, gameId, game, code, roundNumber, navigate]);
+  }, [isDaily, isLastRound, finishGame, advanceRound, updatePlayerScoreForRound, gameId, game, code, roundNumber, roundId, playerUid, navigate]);
 
   const allPlayers = Object.entries(game.players);
   const totalPlayers = allPlayers.length;
@@ -128,7 +139,7 @@ export const RoundResultsScreen = () => {
     <div className="round-results">
       <div className="round-results__card">
         <h2 className="round-results__title">
-          Round {roundNumber} Results
+          {isDaily ? `Day ${roundNumber}` : `Round ${roundNumber}`} Results
         </h2>
 
         {myResult && (
@@ -202,7 +213,16 @@ export const RoundResultsScreen = () => {
           </ol>
         </div>
 
-        {allFinished && (
+        {isDaily && myResult && (
+          <button
+            className="round-results__continue"
+            onClick={handleContinue}
+          >
+            Back to Rounds
+          </button>
+        )}
+
+        {!isDaily && allFinished && (
           <button
             className="round-results__continue"
             onClick={handleContinue}

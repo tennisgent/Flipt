@@ -6,7 +6,7 @@ import {
 import { LoginScreen } from "./features/auth/components/login-screen";
 import { HomeScreen } from "./features/lobby/components/home-screen";
 import { GameLayout } from "./features/game/components/game-layout";
-import { WaitingRoom } from "./features/lobby/components/waiting-room";
+import { GameIndex } from "./features/game/components/game-index";
 import { GameBoard } from "./features/game/components/game-board";
 import { RoundResultsScreen } from "./features/leaderboard/components/round-results-screen";
 import { GameOverScreen } from "./features/leaderboard/components/game-over-screen";
@@ -31,7 +31,7 @@ const AppContent = () => {
     <Routes>
       <Route path="/" element={<HomeScreen />} />
       <Route path="/:code" element={<GameLayout />}>
-        <Route index element={<WaitingRoom />} />
+        <Route index element={<GameIndex />} />
         <Route path=":roundNum" element={<GameBoard />} />
         <Route path=":roundNum/results" element={<RoundResultsScreen />} />
         <Route path="final" element={<GameOverScreen />} />

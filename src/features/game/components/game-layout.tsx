@@ -36,11 +36,14 @@ export const GameLayout = () => {
       setGame(updatedGame);
       addGameSession(code);
 
-      // Auto-join if not already a player and game is still waiting
+      // Auto-join if not already a player and game accepts new players
+      const canJoin =
+        updatedGame.status === "waiting" ||
+        (updatedGame.status === "active" && updatedGame.type === "daily");
       if (
         user &&
         !updatedGame.players[user.uid] &&
-        updatedGame.status === "waiting" &&
+        canJoin &&
         !joinAttempted.current
       ) {
         joinAttempted.current = true;
