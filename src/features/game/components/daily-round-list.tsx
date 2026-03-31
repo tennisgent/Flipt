@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuthContext } from "../../auth/components/auth-provider";
 import { useGameContext } from "./game-layout";
 import { useDailyRounds } from "../hooks/use-daily-rounds";
 import { useGame } from "../../lobby/hooks/use-game";
+import { formatGameCode } from "../utils/game-code";
 import {
   getNextUnlockTime,
   formatCountdown,
@@ -54,6 +55,7 @@ export const DailyRoundList = () => {
   const navigate = useNavigate();
   const { rounds, loading } = useDailyRounds(gameId, user?.uid ?? "");
   const [countdown, setCountdown] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const roundsPerDay = game.roundsPerDay ?? 1;
 
@@ -86,6 +88,14 @@ export const DailyRoundList = () => {
     await finishGame(gameId, game);
     navigate(`/${code}/final`, { replace: true });
   };
+
+  const handleCopyCode = useCallback(async () => {
+    if (!code) return;
+    const url = `${window.location.origin}/invite?code=${formatGameCode(code)}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [code]);
 
   const handleDayClick = (day: DayGroup) => {
     if (roundsPerDay === 1) {
@@ -121,9 +131,19 @@ export const DailyRoundList = () => {
           {" · "}
           {players.length} player{players.length !== 1 && "s"}
         </p>
-        <p className="daily-round-list__code">
-          Share code: <strong>{code}</strong>
-        </p>
+        <div className="daily-round-list__share">
+          <p className="daily-round-list__share-label">Invite others:</p>
+          <button
+            className="daily-round-list__share-code"
+            onClick={handleCopyCode}
+            title="Tap to copy invite link"
+          >
+            {formatGameCode(code ?? "")}
+          </button>
+          {copied && (
+            <span className="daily-round-list__copied">Link copied!</span>
+          )}
+        </div>
       </div>
 
       <div className="daily-round-list__rounds">

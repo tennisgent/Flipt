@@ -31,15 +31,42 @@
   margin: 0 0 var(--space-xs);
 }
 
-.daily-round-list__code {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  margin: 0;
+.daily-round-list__share {
+  margin-top: var(--space-sm);
+  text-align: center;
 }
 
-.daily-round-list__code strong {
-  color: var(--color-accent);
-  letter-spacing: 0.1em;
+.daily-round-list__share-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-sm);
+}
+
+.daily-round-list__share-code {
+  display: inline-block;
+  background: var(--color-bg-elevated);
+  border: 2px dashed var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-xl);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--color-primary-light);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.daily-round-list__share-code:hover {
+  background: var(--color-bg-card);
+  border-color: var(--color-primary-light);
+}
+
+.daily-round-list__copied {
+  display: block;
+  color: var(--color-success);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-xs);
 }
 
 .daily-round-list__rounds {
