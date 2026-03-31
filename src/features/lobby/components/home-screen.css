@@ -18,6 +18,13 @@
   box-shadow: var(--shadow-lg);
 }
 
+.home-screen__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2xl);
+}
+
 .home-screen__logo {
   font-family: var(--font-family-display);
   font-size: var(--font-size-3xl);
@@ -31,13 +38,12 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-xs);
 }
 
 .home-screen__greeting {
   color: var(--color-text-muted);
   font-size: var(--font-size-md);
-  margin-bottom: var(--space-2xl);
 }
 
 .home-screen__actions {

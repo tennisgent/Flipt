@@ -6,6 +6,7 @@ import { useGameList } from "../hooks/use-game-list";
 import { parseGameCode } from "../../game/utils/game-code";
 import { addGameSession } from "../../../shared/hooks/use-game-session";
 import { GameCard } from "./game-card";
+import { AccountMenu } from "../../auth/components/account-menu";
 import type { Difficulty, GameType } from "../../../lib/types";
 import "./home-screen.css";
 
@@ -70,10 +71,15 @@ export const HomeScreen = () => {
   return (
     <div className="home-screen">
       <div className="home-screen__card">
-        <h1 className="home-screen__logo">FLIPT</h1>
-        <p className="home-screen__greeting">
-          Hey, {user?.displayName || "Player"}!
-        </p>
+        <div className="home-screen__header">
+          <div>
+            <h1 className="home-screen__logo">FLIPT</h1>
+            <p className="home-screen__greeting">
+              Hey, {user?.displayName || "Player"}!
+            </p>
+          </div>
+          <AccountMenu />
+        </div>
 
         {mode === "menu" && (
           <div className="home-screen__actions">
