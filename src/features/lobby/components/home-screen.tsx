@@ -71,13 +71,11 @@ export const HomeScreen = () => {
   return (
     <div className="home-screen">
       <div className="home-screen__card">
-        <div className="home-screen__header">
-          <div>
-            <h1 className="home-screen__logo">FLIPT</h1>
-            <p className="home-screen__greeting">
-              Hey, {user?.displayName || "Player"}!
-            </p>
-          </div>
+        <h1 className="home-screen__logo">FLIPT</h1>
+        <div className="home-screen__greeting-row">
+          <p className="home-screen__greeting">
+            Hey, {user?.displayName || "Player"}!
+          </p>
           <AccountMenu />
         </div>
 
