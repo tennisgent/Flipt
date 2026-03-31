@@ -94,8 +94,8 @@ describe("calculateScore", () => {
       guessedLetters: ["l"], // L appears 3 times
       solved: true,
     });
-    // +3 (3 L's) + 10 (solve) + 5 (no hint) + 25 (efficiency: 26-1)
-    expect(score).toBe(43);
+    // +3 (3 L's) + 10 (solve) + 25 (efficiency: 26-1)
+    expect(score).toBe(38);
   });
 
   it("penalizes wrong letters", () => {
@@ -105,8 +105,8 @@ describe("calculateScore", () => {
       wrongLetters: ["z", "x"],
       solved: true,
     });
-    // +3 + -2 + 10 + 5 + (26-3)=23
-    expect(score).toBe(39);
+    // +3 + -2 + 10 + (26-3)=23
+    expect(score).toBe(34);
   });
 
   it("penalizes wrong solve attempts", () => {
@@ -115,8 +115,8 @@ describe("calculateScore", () => {
       solveAttempts: ["HELLO EARTH", "HELLO WORKS"],
       solved: true,
     });
-    // 0 (no letters) + -6 (2 wrong solves) + 10 (solve) + 5 (no hint) + (26-2)=24
-    expect(score).toBe(33);
+    // 0 (no letters) + -6 (2 wrong solves) + 10 (solve) + (26-2)=24
+    expect(score).toBe(28);
   });
 
   it("awards solve bonus only if solved", () => {
@@ -125,14 +125,14 @@ describe("calculateScore", () => {
     expect(withSolve - noSolve).toBe(10);
   });
 
-  it("removes no-hint bonus when hint is used", () => {
+  it("hint usage does not affect score", () => {
     const noHint = calculateScore({ ...baseInput, solved: true });
     const withHint = calculateScore({
       ...baseInput,
       solved: true,
       usedHint: true,
     });
-    expect(noHint - withHint).toBe(5);
+    expect(noHint).toBe(withHint);
   });
 
   it("calculates efficiency bonus correctly", () => {
@@ -141,8 +141,8 @@ describe("calculateScore", () => {
       guessedLetters: ["h"],
       solved: true,
     });
-    // +1 + 10 + 5 + (26-1)=25 = 41
-    expect(fewGuesses).toBe(41);
+    // +1 + 10 + (26-1)=25 = 36
+    expect(fewGuesses).toBe(36);
 
     // Lots of guesses
     const letters = "abcdefghijklmnopqrstuvwxyz".split("");
@@ -157,8 +157,8 @@ describe("calculateScore", () => {
     });
     // correct letters: h(1)+e(1)+l(3)+o(2)+w(1)+r(1)+d(1) = 10
     // wrong letters: 19 * -1 = -19
-    // solve: 10, no hint: 5, efficiency: 26-26 = 0
-    expect(manyGuesses).toBe(6);
+    // solve: 10, efficiency: 26-26 = 0
+    expect(manyGuesses).toBe(1);
   });
 
   it("efficiency bonus floors at 0", () => {
@@ -185,8 +185,8 @@ describe("calculateScore", () => {
       usedHint: false,
     });
     // c(1) + a(1) + t(1) = 3
-    // solve: 10, no hint: 5, efficiency: 26-3 = 23
-    expect(score).toBe(41);
+    // solve: 10, efficiency: 26-3 = 23
+    expect(score).toBe(36);
   });
 
   it("includes time bonus when elapsedSeconds is provided", () => {

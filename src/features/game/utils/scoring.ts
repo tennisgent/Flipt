@@ -2,7 +2,6 @@ const CORRECT_LETTER_POINTS = 1;
 const INCORRECT_LETTER_PENALTY = -1;
 const WRONG_SOLVE_PENALTY = -3;
 const SOLVE_BONUS = 10;
-const NO_HINT_BONUS = 5;
 const MAX_GUESSES_FOR_EFFICIENCY = 26;
 
 const TIME_BONUS_MAX = 20;
@@ -58,11 +57,6 @@ export const calculateScore = (input: ScoreInput): number => {
   // +10 for solving
   if (input.solved) {
     score += SOLVE_BONUS;
-  }
-
-  // +5 no-hint bonus
-  if (!input.usedHint) {
-    score += NO_HINT_BONUS;
   }
 
   // Efficiency bonus: +(26 - total guesses), min 0

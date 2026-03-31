@@ -28,14 +28,11 @@ export const GameBoard = () => {
     wrongLetters,
     solveAttempts,
     solved,
-    usedHint,
-    showHint,
     completed,
     loading,
     getElapsed,
     guessLetter,
     attemptSolve,
-    revealHint,
     submitResult,
     giveUp,
   } = useRound(gameId, user?.uid || "", roundNumber);
@@ -175,12 +172,10 @@ export const GameBoard = () => {
         </div>
       </div>
 
-      {showHint && (
-        <div className="game-board__hint">
-          <span className="game-board__hint-label">Category:</span>{" "}
-          {round.category}
-        </div>
-      )}
+      <div className="game-board__hint">
+        <span className="game-board__hint-label">Category:</span>{" "}
+        {round.category}
+      </div>
 
       <PhraseDisplay
         phrase={round.phrase}
@@ -206,14 +201,6 @@ export const GameBoard = () => {
               />
 
               <div className="game-board__secondary-actions">
-                {!usedHint && (
-                  <button
-                    className="game-board__hint-button"
-                    onClick={revealHint}
-                  >
-                    Show Hint (-5 pts)
-                  </button>
-                )}
                 <button
                   className="game-board__give-up-button"
                   onClick={handleGiveUp}

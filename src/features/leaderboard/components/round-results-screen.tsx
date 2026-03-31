@@ -171,11 +171,6 @@ export const RoundResultsScreen = () => {
                   Solved
                 </span>
               )}
-              {!myResult.usedHint && (
-                <span className="round-results__badge round-results__badge--no-hint">
-                  No Hint
-                </span>
-              )}
               {(myResult.timeBonus ?? 0) > 0 && (
                 <span className="round-results__badge round-results__badge--speed">
                   +{myResult.timeBonus} Speed
