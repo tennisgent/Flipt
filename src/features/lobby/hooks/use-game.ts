@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   onSnapshot,
   writeBatch,
+  arrayUnion,
   Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
@@ -55,6 +56,7 @@ export const useGame = () => {
           status: "waiting",
           difficulty,
           players: { [hostUid]: hostPlayer },
+          playerUids: [hostUid],
           currentRound: 0,
           totalRounds,
           createdAt: serverTimestamp() as Game["createdAt"],
@@ -125,6 +127,7 @@ export const useGame = () => {
           type: "daily",
           difficulty,
           players: { [hostUid]: hostPlayer },
+          playerUids: [hostUid],
           currentRound: 1,
           totalRounds,
           roundsPerDay,
@@ -250,6 +253,7 @@ export const useGame = () => {
 
         await updateDoc(gameDoc.ref, {
           [`players.${playerUid}`]: newPlayer,
+          playerUids: arrayUnion(playerUid),
           updatedAt: serverTimestamp(),
         });
 

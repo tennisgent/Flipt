@@ -23,6 +23,7 @@ export interface Game {
   type?: GameType;
   difficulty: Difficulty;
   players: Record<string, GamePlayer>;
+  playerUids?: string[];
   currentRound: number;
   totalRounds: number;
   roundsPerDay?: number;

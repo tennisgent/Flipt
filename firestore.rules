@@ -13,7 +13,7 @@ service cloud.firestore {
       allow update: if request.auth != null
         && (resource.data.status == "waiting"
             || (resource.data.status == "active" && resource.data.type == "daily")
-            || request.auth.uid in resource.data.players
+            || request.auth.uid in resource.data.playerUids
             || request.auth.uid == resource.data.hostUid);
     }
 
