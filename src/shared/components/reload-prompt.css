@@ -1,0 +1,66 @@
+.reload-prompt {
+  position: fixed;
+  bottom: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-sm) var(--space-sm) var(--space-lg);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg), 0 0 16px rgba(108, 92, 231, 0.25);
+  z-index: 9999;
+  animation: reload-prompt-slide-up 0.3s ease;
+  white-space: nowrap;
+}
+
+@keyframes reload-prompt-slide-up {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.reload-prompt__text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.reload-prompt__actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.reload-prompt__button {
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  transition: background var(--transition-fast);
+}
+
+.reload-prompt__button--update {
+  background: var(--color-primary);
+  color: var(--color-text);
+}
+
+.reload-prompt__button--update:hover {
+  background: var(--color-primary-dark);
+}
+
+.reload-prompt__button--dismiss {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.reload-prompt__button--dismiss:hover {
+  color: var(--color-text);
+}

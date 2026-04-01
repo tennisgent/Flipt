@@ -11,6 +11,8 @@ import { GameBoard } from "./features/game/components/game-board";
 import { DayRoundsList } from "./features/game/components/day-rounds-list";
 import { RoundResultsScreen } from "./features/leaderboard/components/round-results-screen";
 import { GameOverScreen } from "./features/leaderboard/components/game-over-screen";
+import { ReloadPrompt } from "./shared/components/reload-prompt";
+import { useServiceWorker } from "./shared/hooks/use-service-worker";
 import "./styles/theme.css";
 
 const AppContent = () => {
@@ -44,9 +46,12 @@ const AppContent = () => {
 };
 
 export const App = () => {
+  const { needsUpdate, updateApp, dismissUpdate } = useServiceWorker();
+
   return (
     <AuthProvider>
       <AppContent />
+      {needsUpdate && <ReloadPrompt onUpdate={updateApp} onDismiss={dismissUpdate} />}
     </AuthProvider>
   );
 };
